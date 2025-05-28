@@ -40,37 +40,39 @@ serve(async (req) => {
 
     console.log("Generating mockups for image:", imageUrl)
 
-    // Prompts para diferentes tipos de mockups
+    // Prompts profesionales para diferentes estilos de mockups
     const mockupPrompts = [
-      `Professional product photography of the item, clean white background, studio lighting, commercial quality, 4k resolution, ${style} style`,
-      `Elegant product mockup on a marble surface, soft natural lighting, minimalist composition, premium feel`,
-      `Product placed on a wooden desk in a modern office setting, professional photography, depth of field`,
-      `Clean product shot with subtle shadows, gradient background, commercial photography style`,
-      `Product displayed in a lifestyle setting, natural environment, professional composition`,
-      `Minimalist product photography, floating effect, clean background, studio quality`,
-      `Product on a dark surface with dramatic lighting, premium commercial style`,
-      `Bright and airy product shot, white background, soft shadows, e-commerce ready`,
-      `Product mockup with geometric shapes in background, modern design, professional lighting`,
-      `Elegant product display with subtle reflections, commercial photography, high-end feel`
+      `Professional product photography, clean white background, studio lighting, high-end commercial style, minimalist composition, product centered, soft shadows`,
+      `Elegant product mockup on marble surface, luxury feel, soft natural lighting, premium commercial photography, clean aesthetic`,
+      `Modern office desk setup with product, professional workspace, natural daylight, contemporary style, depth of field`,
+      `Clean minimalist product display, floating effect, gradient background, studio quality, commercial advertising style`,
+      `Lifestyle product photography, natural environment, professional composition, warm lighting, authentic setting`,
+      `Premium product showcase, dark background with dramatic lighting, luxury commercial style, high contrast`,
+      `Bright airy product shot, white background, soft diffused lighting, e-commerce ready, clean and professional`,
+      `Product on wooden surface, natural textures, warm lighting, artisanal feel, professional photography`,
+      `Geometric modern background, contemporary design, professional lighting, commercial quality, sleek presentation`,
+      `Elegant product display with subtle reflections, premium feel, studio lighting, high-end commercial photography`
     ];
 
     const mockups = [];
 
-    // Generar cada mockup
+    // Generar cada mockup usando un modelo mejor para productos
     for (let i = 0; i < mockupPrompts.length; i++) {
       try {
         const output = await replicate.run(
-          "stability-ai/stable-diffusion:ac732df83cea7fff18b8472768c88ad041fa750ff7682a21affe81863cbe77e4",
+          "black-forest-labs/flux-schnell",
           {
             input: {
               prompt: mockupPrompts[i],
               image: imageUrl,
-              width: 512,
-              height: 512,
+              go_fast: true,
+              megapixels: "1",
               num_outputs: 1,
-              guidance_scale: 7.5,
-              num_inference_steps: 50,
-              strength: 0.7
+              aspect_ratio: "1:1",
+              output_format: "webp",
+              output_quality: 90,
+              num_inference_steps: 8,
+              guidance_scale: 3.5
             }
           }
         );
