@@ -4,6 +4,7 @@ import { ImageUpload } from '@/components/ImageUpload';
 import { MockupGallery } from '@/components/MockupGallery';
 import { useToast } from '@/hooks/use-toast';
 import { Sparkles, Camera, Zap } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -21,39 +22,41 @@ const Index = () => {
     
     setIsGenerating(true);
     try {
-      // TODO: Implementar llamada a Replicate API
       toast({
-        title: "Generando mockups...",
-        description: "Este proceso puede tomar unos minutos",
+        title: "Iniciando generación...",
+        description: "Enviando tu imagen a nuestra IA para crear los mockups",
       });
-      
-      // Simulación temporal
-      setTimeout(() => {
-        setGeneratedMockups([
-          "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400",
-          "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400",
-          "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400",
-          "https://images.unsplash.com/photo-1556740758-90de374c12ad?w=400",
-          "https://images.unsplash.com/photo-1556742111-a301076d9d18?w=400",
-          "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400",
-          "https://images.unsplash.com/photo-1556740758-90de374c12ad?w=400",
-          "https://images.unsplash.com/photo-1556742111-a301076d9d18?w=400",
-          "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400",
-          "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400",
-        ]);
-        setIsGenerating(false);
+
+      const { data, error } = await supabase.functions.invoke('generate-mockups', {
+        body: { 
+          imageUrl: uploadedImage,
+          style: "professional"
+        }
+      });
+
+      if (error) {
+        console.error('Error from edge function:', error);
+        throw new Error(error.message);
+      }
+
+      if (data && data.mockups && data.mockups.length > 0) {
+        setGeneratedMockups(data.mockups);
         toast({
           title: "¡Mockups generados exitosamente!",
-          description: "10 variaciones profesionales listas para descargar",
+          description: `${data.mockups.length} variaciones profesionales listas para descargar`,
         });
-      }, 3000);
+      } else {
+        throw new Error('No se generaron mockups');
+      }
     } catch (error) {
-      setIsGenerating(false);
+      console.error('Error generating mockups:', error);
       toast({
         title: "Error al generar mockups",
-        description: "Por favor intenta nuevamente",
+        description: error instanceof Error ? error.message : "Por favor intenta nuevamente",
         variant: "destructive",
       });
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -116,9 +119,7 @@ const Index = () => {
                 </div>
               </div>
 
-              {generatedMockups.length > 0 && (
-                <MockupGallery mockups={generatedMockups} isLoading={isGenerating} />
-              )}
+              <MockupGallery mockups={generatedMockups} isLoading={isGenerating} />
             </div>
           )}
         </div>
