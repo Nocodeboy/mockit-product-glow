@@ -38,47 +38,46 @@ serve(async (req) => {
       )
     }
 
-    console.log("Generating mockups for image:", imageUrl)
+    console.log("Generating professional product mockups for image:", imageUrl)
 
-    // Prompts profesionales para diferentes estilos de mockups
-    const mockupPrompts = [
-      `Professional product photography, clean white background, studio lighting, high-end commercial style, minimalist composition, product centered, soft shadows`,
-      `Elegant product mockup on marble surface, luxury feel, soft natural lighting, premium commercial photography, clean aesthetic`,
-      `Modern office desk setup with product, professional workspace, natural daylight, contemporary style, depth of field`,
-      `Clean minimalist product display, floating effect, gradient background, studio quality, commercial advertising style`,
-      `Lifestyle product photography, natural environment, professional composition, warm lighting, authentic setting`,
-      `Premium product showcase, dark background with dramatic lighting, luxury commercial style, high contrast`,
-      `Bright airy product shot, white background, soft diffused lighting, e-commerce ready, clean and professional`,
-      `Product on wooden surface, natural textures, warm lighting, artisanal feel, professional photography`,
-      `Geometric modern background, contemporary design, professional lighting, commercial quality, sleek presentation`,
-      `Elegant product display with subtle reflections, premium feel, studio lighting, high-end commercial photography`
+    // Prompts profesionales específicos para transformar productos simples en fotos impactantes
+    const productTransformationPrompts = [
+      "Transform this product into a professional studio photography shot with clean white background, perfect lighting, commercial quality, high-end product photography style",
+      "Convert this item into an elegant luxury product photo on marble surface, soft natural lighting, premium commercial photography, minimalist aesthetic",
+      "Transform into a modern lifestyle product shot, contemporary office desk setting, natural daylight, professional depth of field, clean composition",
+      "Create a premium e-commerce product photo with gradient background, studio lighting, floating effect, commercial advertising quality",
+      "Convert to professional product photography in natural setting, warm ambient lighting, authentic lifestyle context, high-end commercial style",
+      "Transform into dramatic luxury product showcase, dark background with accent lighting, premium commercial photography, high contrast style",
+      "Create bright, airy product photography, soft diffused lighting, clean white background, e-commerce ready, professional quality",
+      "Convert to artisanal product photo on wooden surface, natural textures, warm lighting, craft photography style, professional composition",
+      "Transform into sleek modern product display, geometric background elements, contemporary design, studio lighting, commercial quality",
+      "Create elegant product photography with subtle reflections, premium studio setup, high-end commercial style, luxury brand aesthetic"
     ];
 
     const mockups = [];
 
-    // Generar cada mockup usando un modelo mejor para productos
-    for (let i = 0; i < mockupPrompts.length; i++) {
+    // Generar cada mockup usando GPT-Image-1 para transformación de productos
+    for (let i = 0; i < productTransformationPrompts.length; i++) {
       try {
+        console.log(`Generating mockup ${i + 1} with prompt: ${productTransformationPrompts[i]}`);
+        
         const output = await replicate.run(
-          "black-forest-labs/flux-schnell",
+          "gpt-image/gpt-image-1",
           {
             input: {
-              prompt: mockupPrompts[i],
               image: imageUrl,
-              go_fast: true,
-              megapixels: "1",
-              num_outputs: 1,
-              aspect_ratio: "1:1",
-              output_format: "webp",
-              output_quality: 90,
-              num_inference_steps: 8,
-              guidance_scale: 3.5
+              prompt: productTransformationPrompts[i],
+              guidance_scale: 7.5,
+              num_inference_steps: 20,
+              strength: 0.8,
+              scheduler: "K_EULER"
             }
           }
         );
 
         if (output && output[0]) {
           mockups.push(output[0]);
+          console.log(`Successfully generated mockup ${i + 1}`);
         }
       } catch (error) {
         console.error(`Error generating mockup ${i + 1}:`, error);
@@ -86,7 +85,7 @@ serve(async (req) => {
       }
     }
 
-    console.log(`Generated ${mockups.length} mockups successfully`);
+    console.log(`Generated ${mockups.length} professional product mockups successfully`);
     
     return new Response(JSON.stringify({ mockups }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
