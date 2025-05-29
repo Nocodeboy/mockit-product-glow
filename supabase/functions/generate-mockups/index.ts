@@ -16,8 +16,14 @@ serve(async (req) => {
 
   try {
     const REPLICATE_API_KEY = Deno.env.get('REPLICATE_API_KEY')
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')
+    
     if (!REPLICATE_API_KEY) {
       throw new Error('REPLICATE_API_KEY is not set')
+    }
+    
+    if (!OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY is not set')
     }
 
     const replicate = new Replicate({
@@ -62,15 +68,12 @@ serve(async (req) => {
         console.log(`Generating mockup ${i + 1} with prompt: ${productTransformationPrompts[i]}`);
         
         const output = await replicate.run(
-          "gpt-image/gpt-image-1",
+          "openai/gpt-image-1",
           {
             input: {
-              image: imageUrl,
               prompt: productTransformationPrompts[i],
-              guidance_scale: 7.5,
-              num_inference_steps: 20,
-              strength: 0.8,
-              scheduler: "K_EULER"
+              input_images: [imageUrl],
+              openai_api_key: OPENAI_API_KEY
             }
           }
         );
