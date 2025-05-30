@@ -17,6 +17,7 @@ serve(async (req) => {
   try {
     const REPLICATE_API_KEY = Deno.env.get('REPLICATE_API_KEY')
     if (!REPLICATE_API_KEY) {
+      console.error('REPLICATE_API_KEY is not configured')
       throw new Error('REPLICATE_API_KEY is not set')
     }
 
@@ -27,7 +28,9 @@ serve(async (req) => {
     const body = await req.json()
     const { imageUrl, style = "professional" } = body
 
+    // Validaciones de entrada más robustas
     if (!imageUrl) {
+      console.error('No imageUrl provided in request')
       return new Response(
         JSON.stringify({ 
           error: "Missing required field: imageUrl is required" 
@@ -38,9 +41,24 @@ serve(async (req) => {
       )
     }
 
-    console.log("Generating professional product mockups using flux-kontext-pro for image:", imageUrl)
+    // Validar que imageUrl sea una URL válida
+    try {
+      new URL(imageUrl);
+    } catch {
+      console.error('Invalid imageUrl provided:', imageUrl)
+      return new Response(
+        JSON.stringify({ 
+          error: "Invalid imageUrl format" 
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        }
+      )
+    }
 
-    // Prompts específicos para transformar productos usando flux-kontext-pro
+    console.log("Starting mockup generation using flux-kontext-pro for image:", imageUrl)
+
+    // Prompts específicos y optimizados para transformar productos usando flux-kontext-pro
     const productTransformationPrompts = [
       "Transform this into a professional studio product photo with clean white background and perfect commercial lighting",
       "Make this an elegant luxury product shot on marble surface with soft natural lighting and premium aesthetic",
@@ -55,12 +73,16 @@ serve(async (req) => {
     ];
 
     const mockups = [];
+    const errors = [];
 
-    // Generar cada mockup usando flux-kontext-pro
+    console.log(`Starting generation of ${productTransformationPrompts.length} mockups`)
+
+    // Generar cada mockup usando flux-kontext-pro con manejo individual de errores
     for (let i = 0; i < productTransformationPrompts.length; i++) {
       try {
-        console.log(`Generating mockup ${i + 1} with prompt: ${productTransformationPrompts[i]}`);
+        console.log(`Generating mockup ${i + 1}/${productTransformationPrompts.length} with prompt: ${productTransformationPrompts[i]}`);
         
+        const startTime = Date.now();
         const output = await replicate.run(
           "black-forest-labs/flux-kontext-pro",
           {
@@ -71,26 +93,65 @@ serve(async (req) => {
             }
           }
         );
+        const duration = Date.now() - startTime;
 
-        if (output) {
-          mockups.push(output);
-          console.log(`Successfully generated mockup ${i + 1}`);
+        if (output && typeof output === 'string') {
+          // Validar que la salida sea una URL válida
+          try {
+            new URL(output);
+            mockups.push(output);
+            console.log(`Successfully generated mockup ${i + 1} in ${duration}ms`);
+          } catch {
+            console.error(`Invalid URL output for mockup ${i + 1}:`, output);
+            errors.push(`Mockup ${i + 1}: Invalid URL format`);
+          }
+        } else {
+          console.error(`Invalid output format for mockup ${i + 1}:`, output);
+          errors.push(`Mockup ${i + 1}: Invalid output format`);
         }
       } catch (error) {
         console.error(`Error generating mockup ${i + 1}:`, error);
+        errors.push(`Mockup ${i + 1}: ${error.message || 'Unknown error'}`);
         // Continuar con el siguiente mockup si uno falla
       }
     }
 
-    console.log(`Generated ${mockups.length} professional product mockups successfully`);
+    console.log(`Generation completed. Success: ${mockups.length}, Errors: ${errors.length}`);
     
-    return new Response(JSON.stringify({ mockups }), {
+    // Si no se generó ningún mockup, devolver error
+    if (mockups.length === 0) {
+      console.error('No mockups were generated successfully. Errors:', errors);
+      return new Response(
+        JSON.stringify({ 
+          error: "No se pudieron generar mockups",
+          details: errors
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500,
+        }
+      )
+    }
+
+    // Si se generaron algunos mockups pero hubo errores, incluir información de errores
+    const response = {
+      mockups,
+      total_generated: mockups.length,
+      total_requested: productTransformationPrompts.length,
+      ...(errors.length > 0 && { warnings: errors })
+    };
+
+    console.log(`Returning ${mockups.length} successful mockups`);
+    
+    return new Response(JSON.stringify(response), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })
   } catch (error) {
-    console.error("Error in generate-mockups function:", error)
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error("Critical error in generate-mockups function:", error)
+    return new Response(JSON.stringify({ 
+      error: error.message || "An unexpected error occurred",
+      timestamp: new Date().toISOString()
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
     })
