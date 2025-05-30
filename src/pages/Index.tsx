@@ -2,11 +2,17 @@
 import React, { useState } from 'react';
 import { ImageUpload } from '@/components/ImageUpload';
 import { MockupGallery } from '@/components/MockupGallery';
+import ResultsGallery from '@/components/ResultsGallery';
+import Testimonials from '@/components/Testimonials';
+import PricingSection from '@/components/PricingSection';
 import { useToast } from '@/hooks/use-toast';
-import { Sparkles, Camera, Zap, RotateCcw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Sparkles, Camera, Zap, RotateCcw, User, LogIn } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 const Index = () => {
+  const navigate = useNavigate();
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [generatedMockups, setGeneratedMockups] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -33,7 +39,7 @@ const Index = () => {
     }
     
     setIsGenerating(true);
-    setGeneratedMockups([]); // Limpiar mockups anteriores
+    setGeneratedMockups([]);
     
     try {
       toast({
@@ -58,7 +64,6 @@ const Index = () => {
       }
 
       if (data && data.mockups && Array.isArray(data.mockups) && data.mockups.length > 0) {
-        // Validar que todas las URLs sean válidas
         const validMockups = data.mockups.filter((mockup: string) => {
           try {
             new URL(mockup);
@@ -97,7 +102,34 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      {/* Header */}
+      {/* Navigation */}
+      <nav className="container mx-auto px-4 py-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-8 w-8 text-purple-400" />
+            <span className="text-2xl font-bold text-white">MockIT</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              className="text-white hover:text-purple-300"
+              onClick={() => navigate('/dashboard')}
+            >
+              <User className="h-4 w-4 mr-2" />
+              Mi Cuenta
+            </Button>
+            <Button
+              variant="outline"
+              className="border-purple-400 text-purple-400 hover:bg-purple-400 hover:text-white"
+            >
+              <LogIn className="h-4 w-4 mr-2" />
+              Iniciar Sesión
+            </Button>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-2 mb-4">
@@ -126,7 +158,7 @@ const Index = () => {
         </div>
 
         {/* Main Content */}
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto mb-20">
           {!uploadedImage ? (
             <ImageUpload onImageUpload={handleImageUpload} />
           ) : (
@@ -185,6 +217,35 @@ const Index = () => {
           )}
         </div>
       </div>
+
+      {/* New Sections */}
+      <ResultsGallery />
+      <Testimonials />
+      <PricingSection />
+
+      {/* Footer */}
+      <footer className="bg-slate-900 border-t border-slate-800 py-12">
+        <div className="container mx-auto px-4">
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <Sparkles className="h-6 w-6 text-purple-400" />
+              <span className="text-xl font-bold text-white">MockIT</span>
+            </div>
+            <p className="text-gray-400 mb-6">
+              Transformando productos en mockups profesionales con IA
+            </p>
+            <div className="flex justify-center gap-8 text-sm text-gray-500">
+              <a href="#" className="hover:text-purple-400 transition-colors">Términos</a>
+              <a href="#" className="hover:text-purple-400 transition-colors">Privacidad</a>
+              <a href="#" className="hover:text-purple-400 transition-colors">Soporte</a>
+              <a href="#" className="hover:text-purple-400 transition-colors">API</a>
+            </div>
+            <p className="text-gray-600 text-xs mt-6">
+              © 2024 MockIT. Todos los derechos reservados.
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
