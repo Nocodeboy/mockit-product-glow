@@ -38,45 +38,42 @@ serve(async (req) => {
       )
     }
 
-    console.log("Generating professional product mockups for image:", imageUrl)
+    console.log("Generating professional product mockups using flux-kontext-pro for image:", imageUrl)
 
-    // Prompts profesionales específicos para transformar productos simples en fotos impactantes
+    // Prompts específicos para transformar productos usando flux-kontext-pro
     const productTransformationPrompts = [
-      "Transform this product into a professional studio photography shot with clean white background, perfect lighting, commercial quality, high-end product photography style",
-      "Convert this item into an elegant luxury product photo on marble surface, soft natural lighting, premium commercial photography, minimalist aesthetic",
-      "Transform into a modern lifestyle product shot, contemporary office desk setting, natural daylight, professional depth of field, clean composition",
-      "Create a premium e-commerce product photo with gradient background, studio lighting, floating effect, commercial advertising quality",
-      "Convert to professional product photography in natural setting, warm ambient lighting, authentic lifestyle context, high-end commercial style",
-      "Transform into dramatic luxury product showcase, dark background with accent lighting, premium commercial photography, high contrast style",
-      "Create bright, airy product photography, soft diffused lighting, clean white background, e-commerce ready, professional quality",
-      "Convert to artisanal product photo on wooden surface, natural textures, warm lighting, craft photography style, professional composition",
-      "Transform into sleek modern product display, geometric background elements, contemporary design, studio lighting, commercial quality",
-      "Create elegant product photography with subtle reflections, premium studio setup, high-end commercial style, luxury brand aesthetic"
+      "Transform this into a professional studio product photo with clean white background and perfect commercial lighting",
+      "Make this an elegant luxury product shot on marble surface with soft natural lighting and premium aesthetic",
+      "Convert this to a modern lifestyle product photo in contemporary office setting with natural daylight",
+      "Transform into premium e-commerce product photography with gradient background and studio lighting",
+      "Make this a professional product photo in natural setting with warm ambient lighting and authentic context",
+      "Convert to dramatic luxury product showcase with dark background and accent lighting",
+      "Transform into bright, airy product photography with soft diffused lighting and clean white background",
+      "Make this an artisanal product photo on wooden surface with natural textures and warm lighting",
+      "Convert to sleek modern product display with geometric background and contemporary design",
+      "Transform into elegant product photography with subtle reflections and premium studio setup"
     ];
 
     const mockups = [];
 
-    // Generar cada mockup usando GPT-Image-1 para transformación de productos
+    // Generar cada mockup usando flux-kontext-pro
     for (let i = 0; i < productTransformationPrompts.length; i++) {
       try {
         console.log(`Generating mockup ${i + 1} with prompt: ${productTransformationPrompts[i]}`);
         
         const output = await replicate.run(
-          "gpt-image/gpt-image-1",
+          "black-forest-labs/flux-kontext-pro",
           {
             input: {
-              image: imageUrl,
               prompt: productTransformationPrompts[i],
-              guidance_scale: 7.5,
-              num_inference_steps: 20,
-              strength: 0.8,
-              scheduler: "K_EULER"
+              input_image: imageUrl,
+              aspect_ratio: "1:1"
             }
           }
         );
 
-        if (output && output[0]) {
-          mockups.push(output[0]);
+        if (output) {
+          mockups.push(output);
           console.log(`Successfully generated mockup ${i + 1}`);
         }
       } catch (error) {
