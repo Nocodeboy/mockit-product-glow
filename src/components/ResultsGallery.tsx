@@ -36,53 +36,56 @@ const ResultsGallery = () => {
   ];
 
   return (
-    <section className="py-20 bg-slate-50">
-      <div className="container mx-auto px-4">
+    <section className="py-20 bg-gradient-to-br from-slate-50 via-white to-slate-100 relative">
+      {/* Background pattern */}
+      <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%239C92AC" fill-opacity="0.05"%3E%3Ccircle cx="7" cy="7" r="1"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]"></div>
+      
+      <div className="container mx-auto px-4 relative z-10">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            Transformaciones Increíbles
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+            Transformaciones <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Increíbles</span>
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
             Mira cómo nuestros usuarios han transformado sus productos simples en mockups profesionales
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {examples.map((example) => (
-            <Card key={example.id} className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
+            <Card key={example.id} className="group overflow-hidden hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 bg-white/80 backdrop-blur-sm border border-gray-200/50">
               <CardContent className="p-0">
                 <div className="relative">
                   <div className="flex">
-                    <div className="w-1/2 relative">
+                    <div className="w-1/2 relative overflow-hidden">
                       <img
                         src={example.before}
                         alt="Antes"
-                        className="w-full h-48 object-cover"
+                        className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-110"
                       />
-                      <div className="absolute top-2 left-2">
-                        <Badge variant="secondary" className="text-xs">
+                      <div className="absolute top-3 left-3">
+                        <Badge variant="secondary" className="text-xs bg-white/90 backdrop-blur-sm shadow-sm">
                           Antes
                         </Badge>
                       </div>
                     </div>
-                    <div className="w-1/2 relative">
+                    <div className="w-1/2 relative overflow-hidden">
                       <img
                         src={example.after}
                         alt="Después"
-                        className="w-full h-48 object-cover"
+                        className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-110"
                       />
-                      <div className="absolute top-2 right-2">
-                        <Badge className="text-xs bg-green-500">
+                      <div className="absolute top-3 right-3">
+                        <Badge className="text-xs bg-gradient-to-r from-green-500 to-emerald-500 shadow-lg">
                           Después
                         </Badge>
                       </div>
                     </div>
                   </div>
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                    <Badge variant="outline" className="mb-2 bg-white/90">
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent p-4">
+                    <Badge variant="outline" className="mb-2 bg-white/95 backdrop-blur-sm border-white/50 shadow-sm">
                       {example.style}
                     </Badge>
-                    <p className="text-white text-sm font-medium">
+                    <p className="text-white text-sm font-medium drop-shadow-lg">
                       {example.category}
                     </p>
                   </div>

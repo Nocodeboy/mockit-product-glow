@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, Star, Zap, Crown } from 'lucide-react';
+import { Check, Star, Zap, Crown, Sparkles } from 'lucide-react';
 
 const PricingSection = () => {
   const plans = [
@@ -12,7 +12,7 @@ const PricingSection = () => {
       name: 'Gratuito',
       price: '$0',
       period: 'por mes',
-      description: 'Perfect para probar MockIT',
+      description: 'Perfecto para probar MockIT',
       icon: <Star className="h-6 w-6" />,
       features: [
         '5 mockups por mes',
@@ -27,7 +27,8 @@ const PricingSection = () => {
       ],
       buttonText: 'Comenzar Gratis',
       buttonVariant: 'outline' as const,
-      popular: false
+      popular: false,
+      gradient: 'from-gray-400 to-gray-600'
     },
     {
       id: 'pro',
@@ -48,7 +49,8 @@ const PricingSection = () => {
       ],
       buttonText: 'Elegir Pro',
       buttonVariant: 'default' as const,
-      popular: true
+      popular: true,
+      gradient: 'from-purple-500 to-pink-500'
     },
     {
       id: 'enterprise',
@@ -70,18 +72,27 @@ const PricingSection = () => {
       ],
       buttonText: 'Contactar Ventas',
       buttonVariant: 'outline' as const,
-      popular: false
+      popular: false,
+      gradient: 'from-yellow-400 to-orange-500'
     }
   ];
 
   return (
-    <section className="py-20 bg-gradient-to-br from-slate-50 to-white">
-      <div className="container mx-auto px-4">
+    <section className="py-20 bg-gradient-to-br from-slate-50 via-white to-purple-50 relative">
+      {/* Background effects */}
+      <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%239C92AC" fill-opacity="0.03"%3E%3Ccircle cx="7" cy="7" r="1"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]"></div>
+      <div className="absolute top-10 right-10 w-72 h-72 bg-purple-200/30 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-10 left-10 w-96 h-96 bg-pink-200/30 rounded-full blur-3xl"></div>
+      
+      <div className="container mx-auto px-4 relative z-10">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            Planes Para Cada Necesidad
-          </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <Sparkles className="h-8 w-8 text-purple-600" />
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900">
+              Planes Para Cada <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Necesidad</span>
+            </h2>
+          </div>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
             Desde proyectos personales hasta equipos empresariales, tenemos el plan perfecto para ti
           </p>
         </div>
@@ -90,59 +101,60 @@ const PricingSection = () => {
           {plans.map((plan) => (
             <Card 
               key={plan.id} 
-              className={`relative hover:shadow-xl transition-all duration-300 ${
+              className={`group relative hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-3 bg-white/80 backdrop-blur-sm ${
                 plan.popular 
-                  ? 'border-2 border-purple-500 scale-105 shadow-lg' 
-                  : 'border hover:border-purple-200'
+                  ? 'border-2 border-purple-300 scale-105 shadow-xl shadow-purple-200/50' 
+                  : 'border border-gray-200/50 hover:border-purple-200'
               }`}
             >
               {plan.popular && (
-                <Badge 
-                  className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-purple-500 to-pink-500"
-                >
-                  Más Popular
-                </Badge>
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                  <Badge 
+                    className={`bg-gradient-to-r ${plan.gradient} text-white shadow-lg px-4 py-1`}
+                  >
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    Más Popular
+                  </Badge>
+                </div>
               )}
               
-              <CardHeader className="text-center pb-8">
-                <div className={`w-12 h-12 mx-auto mb-4 rounded-full flex items-center justify-center ${
-                  plan.popular 
-                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' 
-                    : 'bg-gray-100 text-gray-600'
-                }`}>
+              <CardHeader className="text-center pb-8 pt-8">
+                <div className={`w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center bg-gradient-to-r ${plan.gradient} text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}>
                   {plan.icon}
                 </div>
                 
-                <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
-                <p className="text-gray-600 mt-2">{plan.description}</p>
+                <CardTitle className="text-2xl font-bold text-gray-900">{plan.name}</CardTitle>
+                <p className="text-gray-600 mt-2 leading-relaxed">{plan.description}</p>
                 
                 <div className="mt-6">
-                  <span className="text-4xl font-bold text-gray-900">{plan.price}</span>
-                  <span className="text-gray-600 ml-1">{plan.period}</span>
+                  <span className="text-5xl font-bold text-gray-900">{plan.price}</span>
+                  <span className="text-gray-600 ml-2">{plan.period}</span>
                 </div>
               </CardHeader>
 
               <CardContent className="pt-0">
-                <ul className="space-y-3 mb-8">
+                <ul className="space-y-4 mb-8">
                   {plan.features.map((feature, index) => (
                     <li key={index} className="flex items-start">
-                      <Check className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
-                      <span className="text-gray-700">{feature}</span>
+                      <div className={`h-5 w-5 rounded-full bg-gradient-to-r ${plan.gradient} flex items-center justify-center mr-3 mt-0.5 flex-shrink-0`}>
+                        <Check className="h-3 w-3 text-white" />
+                      </div>
+                      <span className="text-gray-700 leading-relaxed">{feature}</span>
                     </li>
                   ))}
                   {plan.limitations?.map((limitation, index) => (
                     <li key={`limit-${index}`} className="flex items-start opacity-60">
-                      <span className="h-5 w-5 mr-3 mt-0.5 flex-shrink-0 text-center">—</span>
-                      <span className="text-gray-500 line-through">{limitation}</span>
+                      <span className="h-5 w-5 mr-3 mt-0.5 flex-shrink-0 text-center text-gray-400">—</span>
+                      <span className="text-gray-500 line-through leading-relaxed">{limitation}</span>
                     </li>
                   ))}
                 </ul>
 
                 <Button 
-                  className={`w-full ${
+                  className={`w-full h-12 font-semibold transition-all duration-300 ${
                     plan.popular 
-                      ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600' 
-                      : ''
+                      ? `bg-gradient-to-r ${plan.gradient} hover:shadow-lg hover:shadow-purple-300/50 transform hover:scale-105 text-white border-0` 
+                      : 'hover:bg-gray-50'
                   }`}
                   variant={plan.buttonVariant}
                   size="lg"
@@ -154,13 +166,15 @@ const PricingSection = () => {
           ))}
         </div>
 
-        <div className="text-center mt-12">
-          <p className="text-gray-600 mb-4">
-            ¿Necesitas más de 100 mockups al mes? ¿Tienes requisitos especiales?
-          </p>
-          <Button variant="link" className="text-purple-600 hover:text-purple-700">
-            Contáctanos para un plan personalizado →
-          </Button>
+        <div className="text-center mt-16">
+          <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-8 border border-gray-200/50 shadow-lg max-w-2xl mx-auto">
+            <p className="text-gray-700 mb-4 text-lg">
+              ¿Necesitas más de 100 mockups al mes? ¿Tienes requisitos especiales?
+            </p>
+            <Button variant="link" className="text-purple-600 hover:text-purple-700 font-semibold">
+              Contáctanos para un plan personalizado →
+            </Button>
+          </div>
         </div>
       </div>
     </section>
