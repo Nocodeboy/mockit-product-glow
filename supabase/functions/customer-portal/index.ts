@@ -14,6 +14,14 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Customer portal function started");
+
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) {
+      console.error("STRIPE_SECRET_KEY no está configurada");
+      throw new Error("STRIPE_SECRET_KEY no está configurada en los secretos");
+    }
+
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
@@ -29,7 +37,9 @@ serve(async (req) => {
     const user = userData.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { 
+    console.log("User authenticated for portal:", user.email);
+
+    const stripe = new Stripe(stripeKey, { 
       apiVersion: "2023-10-16" 
     });
     
@@ -39,6 +49,8 @@ serve(async (req) => {
     }
     
     const customerId = customers.data[0].id;
+    console.log("Customer found for portal:", customerId);
+    
     const origin = req.headers.get("origin") || "http://localhost:3000";
     
     const portalSession = await stripe.billingPortal.sessions.create({
@@ -46,13 +58,18 @@ serve(async (req) => {
       return_url: `${origin}/dashboard`,
     });
 
+    console.log("Portal session created:", portalSession.id);
+
     return new Response(JSON.stringify({ url: portalSession.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (error) {
-    console.error('Error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error('Error in customer-portal:', error);
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      details: "Error al abrir el portal de gestión. Verifica que tienes una suscripción activa."
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

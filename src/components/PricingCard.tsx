@@ -43,7 +43,7 @@ const PricingCard = ({ plan }: PricingCardProps) => {
       try {
         await openCustomerPortal();
       } catch (error) {
-        toast.error('Error al abrir el portal de gestión');
+        console.error('Error opening portal:', error);
       }
       return;
     }
@@ -55,17 +55,27 @@ const PricingCard = ({ plan }: PricingCardProps) => {
 
     try {
       setLoading(true);
+      console.log('Starting checkout for plan:', plan.id);
+      
       const { url } = await createCheckoutSession(plan.id);
-      window.open(url, '_blank');
+      
+      if (url) {
+        console.log('Redirecting to Stripe checkout:', url);
+        // Abrir Stripe checkout en nueva ventana
+        window.open(url, '_blank');
+      } else {
+        throw new Error('No se recibió URL de checkout');
+      }
     } catch (error) {
-      console.error('Error:', error);
-      toast.error('Error al procesar el pago');
+      console.error('Error creating checkout:', error);
+      toast.error('Error al procesar el pago. Inténtalo de nuevo.');
     } finally {
       setLoading(false);
     }
   };
 
   const getButtonText = () => {
+    if (loading) return 'Procesando...';
     if (isCurrentPlan) {
       return subscription_tier === 'free' ? 'Plan Actual' : 'Gestionar Plan';
     }
@@ -141,7 +151,7 @@ const PricingCard = ({ plan }: PricingCardProps) => {
           onClick={handlePlanSelection}
           disabled={loading}
         >
-          {loading ? 'Procesando...' : getButtonText()}
+          {getButtonText()}
         </Button>
       </CardContent>
     </Card>

@@ -13,28 +13,51 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabaseClient = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_ANON_KEY") ?? ""
-  );
-
   try {
-    const authHeader = req.headers.get("Authorization")!;
+    console.log("Create checkout function started");
+
+    // Verificar que tenemos la clave de Stripe
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) {
+      console.error("STRIPE_SECRET_KEY no está configurada");
+      throw new Error("STRIPE_SECRET_KEY no está configurada en los secretos");
+    }
+    console.log("Stripe key found:", stripeKey.substring(0, 10) + "...");
+
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+    );
+
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      throw new Error("No authorization header provided");
+    }
+
     const token = authHeader.replace("Bearer ", "");
     const { data } = await supabaseClient.auth.getUser(token);
     const user = data.user;
-    if (!user?.email) throw new Error("Usuario no autenticado");
+    if (!user?.email) {
+      throw new Error("Usuario no autenticado");
+    }
 
-    const { priceId, planType } = await req.json();
+    console.log("User authenticated:", user.email);
+
+    const { planType } = await req.json();
+    console.log("Plan type requested:", planType);
     
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { 
+    const stripe = new Stripe(stripeKey, { 
       apiVersion: "2023-10-16" 
     });
     
+    // Buscar cliente existente
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     let customerId;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
+      console.log("Existing customer found:", customerId);
+    } else {
+      console.log("No existing customer found");
     }
 
     // Configuración de precios para diferentes planes
@@ -45,6 +68,7 @@ serve(async (req) => {
     };
 
     const config = priceConfig[planType as keyof typeof priceConfig] || priceConfig.pro;
+    console.log("Price config:", config);
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -73,13 +97,18 @@ serve(async (req) => {
       }
     });
 
+    console.log("Stripe session created:", session.id);
+
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (error) {
-    console.error('Error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error('Error in create-checkout:', error);
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      details: "Error al procesar el pago. Verifica tu conexión y vuelve a intentar."
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
