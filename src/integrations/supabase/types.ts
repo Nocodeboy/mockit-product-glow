@@ -98,6 +98,45 @@ export type Database = {
         }
         Relationships: []
       }
+      orders: {
+        Row: {
+          amount: number | null
+          created_at: string
+          credits_purchased: number | null
+          currency: string | null
+          id: string
+          product_type: string | null
+          status: string | null
+          stripe_session_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          credits_purchased?: number | null
+          currency?: string | null
+          id?: string
+          product_type?: string | null
+          status?: string | null
+          stripe_session_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          credits_purchased?: number | null
+          currency?: string | null
+          id?: string
+          product_type?: string | null
+          status?: string | null
+          stripe_session_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -107,6 +146,9 @@ export type Database = {
           full_name: string | null
           id: string
           plan: string | null
+          stripe_customer_id: string | null
+          subscription_end: string | null
+          subscription_tier: string | null
           updated_at: string | null
         }
         Insert: {
@@ -117,6 +159,9 @@ export type Database = {
           full_name?: string | null
           id: string
           plan?: string | null
+          stripe_customer_id?: string | null
+          subscription_end?: string | null
+          subscription_tier?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -127,7 +172,46 @@ export type Database = {
           full_name?: string | null
           id?: string
           plan?: string | null
+          stripe_customer_id?: string | null
+          subscription_end?: string | null
+          subscription_tier?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      subscribers: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          stripe_customer_id: string | null
+          subscribed: boolean
+          subscription_end: string | null
+          subscription_tier: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          stripe_customer_id?: string | null
+          subscribed?: boolean
+          subscription_end?: string | null
+          subscription_tier?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          stripe_customer_id?: string | null
+          subscribed?: boolean
+          subscription_end?: string | null
+          subscription_tier?: string | null
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }

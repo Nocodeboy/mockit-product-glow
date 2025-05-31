@@ -20,11 +20,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+
+        // Si el usuario se autentica, crear/actualizar perfil
+        if (session?.user && event === 'SIGNED_IN') {
+          const { error } = await supabase
+            .from('profiles')
+            .upsert({
+              id: session.user.id,
+              email: session.user.email,
+              full_name: session.user.user_metadata?.full_name || session.user.email,
+              updated_at: new Date().toISOString(),
+            });
+
+          if (error) {
+            console.error('Error updating profile:', error);
+          }
+        }
       }
     );
 

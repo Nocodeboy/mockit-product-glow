@@ -1,9 +1,8 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Check, Star, Zap, Crown, Sparkles } from 'lucide-react';
+import { Star, Zap, Crown, Sparkles } from 'lucide-react';
+import PricingCard from './PricingCard';
 
 const PricingSection = () => {
   const plans = [
@@ -20,10 +19,6 @@ const PricingSection = () => {
         'Formatos básicos',
         'Marca de agua incluida',
         'Soporte por email'
-      ],
-      limitations: [
-        'Funciones limitadas',
-        'Sin prioridad en soporte'
       ],
       buttonText: 'Comenzar Gratis',
       buttonVariant: 'outline' as const,
@@ -101,70 +96,7 @@ const PricingSection = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {plans.map((plan) => (
-            <Card 
-              key={plan.id} 
-              className={`group relative hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-3 bg-white/80 backdrop-blur-sm ${
-                plan.popular 
-                  ? 'border-2 border-purple-300 scale-105 shadow-xl shadow-purple-200/50' 
-                  : 'border border-gray-200/50 hover:border-purple-200'
-              }`}
-            >
-              {plan.popular && (
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <Badge 
-                    className={`bg-gradient-to-r ${plan.gradient} text-white shadow-lg px-4 py-1`}
-                  >
-                    <Sparkles className="h-3 w-3 mr-1" />
-                    Más Popular
-                  </Badge>
-                </div>
-              )}
-              
-              <CardHeader className="text-center pb-8 pt-8">
-                <div className={`w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center bg-gradient-to-r ${plan.gradient} text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                  {plan.icon}
-                </div>
-                
-                <CardTitle className="text-2xl font-bold text-gray-900">{plan.name}</CardTitle>
-                <p className="text-gray-600 mt-2 leading-relaxed">{plan.description}</p>
-                
-                <div className="mt-6">
-                  <span className="text-5xl font-bold text-gray-900">{plan.price}</span>
-                  <span className="text-gray-600 ml-2">{plan.period}</span>
-                </div>
-              </CardHeader>
-
-              <CardContent className="pt-0">
-                <ul className="space-y-4 mb-8">
-                  {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-start">
-                      <div className={`h-5 w-5 rounded-full bg-gradient-to-r ${plan.gradient} flex items-center justify-center mr-3 mt-0.5 flex-shrink-0`}>
-                        <Check className="h-3 w-3 text-white" />
-                      </div>
-                      <span className="text-gray-700 leading-relaxed">{feature}</span>
-                    </li>
-                  ))}
-                  {plan.limitations?.map((limitation, index) => (
-                    <li key={`limit-${index}`} className="flex items-start opacity-60">
-                      <span className="h-5 w-5 mr-3 mt-0.5 flex-shrink-0 text-center text-gray-400">—</span>
-                      <span className="text-gray-500 line-through leading-relaxed">{limitation}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <Button 
-                  className={`w-full h-12 font-semibold transition-all duration-300 ${
-                    plan.popular 
-                      ? `bg-gradient-to-r ${plan.gradient} hover:shadow-lg hover:shadow-purple-300/50 transform hover:scale-105 text-white border-0` 
-                      : 'hover:bg-gray-50'
-                  }`}
-                  variant={plan.buttonVariant}
-                  size="lg"
-                >
-                  {plan.buttonText}
-                </Button>
-              </CardContent>
-            </Card>
+            <PricingCard key={plan.id} plan={plan} />
           ))}
         </div>
 
