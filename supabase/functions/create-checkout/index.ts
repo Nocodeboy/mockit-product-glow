@@ -16,10 +16,12 @@ serve(async (req) => {
   try {
     console.log("Create checkout function started");
 
-    // Verificar que tenemos la clave de Stripe
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    // Verificar que tenemos la clave de Stripe (probando ambas variantes)
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY") || Deno.env.get("STRIPE-SECRET-KEY");
     if (!stripeKey) {
-      console.error("STRIPE_SECRET_KEY no está configurada");
+      console.error("No se encontró STRIPE_SECRET_KEY ni STRIPE-SECRET-KEY");
+      const availableEnvs = Object.keys(Deno.env.toObject()).filter(key => key.includes('STRIPE'));
+      console.log("Variables disponibles que contienen STRIPE:", availableEnvs);
       throw new Error("STRIPE_SECRET_KEY no está configurada en los secretos");
     }
     console.log("Stripe key found:", stripeKey.substring(0, 10) + "...");
@@ -31,6 +33,7 @@ serve(async (req) => {
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
+      console.error("No authorization header provided");
       throw new Error("No authorization header provided");
     }
 
@@ -38,6 +41,7 @@ serve(async (req) => {
     const { data } = await supabaseClient.auth.getUser(token);
     const user = data.user;
     if (!user?.email) {
+      console.error("User not authenticated or no email");
       throw new Error("Usuario no autenticado");
     }
 

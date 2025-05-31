@@ -57,18 +57,18 @@ const PricingCard = ({ plan }: PricingCardProps) => {
       setLoading(true);
       console.log('Starting checkout for plan:', plan.id);
       
-      const { url } = await createCheckoutSession(plan.id);
+      const response = await createCheckoutSession(plan.id);
       
-      if (url) {
-        console.log('Redirecting to Stripe checkout:', url);
+      if (response?.url) {
+        console.log('Redirecting to Stripe checkout:', response.url);
         // Abrir Stripe checkout en nueva ventana
-        window.open(url, '_blank');
+        window.open(response.url, '_blank');
       } else {
         throw new Error('No se recibió URL de checkout');
       }
     } catch (error) {
       console.error('Error creating checkout:', error);
-      toast.error('Error al procesar el pago. Inténtalo de nuevo.');
+      // El error ya se muestra en createCheckoutSession
     } finally {
       setLoading(false);
     }

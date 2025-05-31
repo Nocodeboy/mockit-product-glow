@@ -79,15 +79,22 @@ export const useSubscription = () => {
 
       if (error) {
         console.error('Error creating checkout:', error);
-        toast.error('Error al crear sesión de pago');
+        toast.error(`Error al crear sesión de pago: ${error.message}`);
         throw error;
+      }
+
+      if (data?.error) {
+        console.error('Server error:', data.error);
+        toast.error(`Error del servidor: ${data.error}`);
+        throw new Error(data.error);
       }
 
       console.log('Checkout session created:', data);
       return data;
     } catch (error) {
       console.error('Error in createCheckoutSession:', error);
-      toast.error('Error al procesar el pago');
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      toast.error(`Error al procesar el pago: ${errorMessage}`);
       throw error;
     }
   };

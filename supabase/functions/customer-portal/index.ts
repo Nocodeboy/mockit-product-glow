@@ -16,7 +16,7 @@ serve(async (req) => {
   try {
     console.log("Customer portal function started");
 
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY") || Deno.env.get("STRIPE-SECRET-KEY");
     if (!stripeKey) {
       console.error("STRIPE_SECRET_KEY no está configurada");
       throw new Error("STRIPE_SECRET_KEY no está configurada en los secretos");
