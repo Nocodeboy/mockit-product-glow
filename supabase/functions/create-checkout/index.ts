@@ -16,15 +16,12 @@ serve(async (req) => {
   try {
     console.log("Create checkout function started");
 
-    // Verificar que tenemos la clave de Stripe (probando ambas variantes)
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY") || Deno.env.get("STRIPE-SECRET-KEY");
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) {
-      console.error("No se encontró STRIPE_SECRET_KEY ni STRIPE-SECRET-KEY");
-      const availableEnvs = Object.keys(Deno.env.toObject()).filter(key => key.includes('STRIPE'));
-      console.log("Variables disponibles que contienen STRIPE:", availableEnvs);
+      console.error("STRIPE_SECRET_KEY not configured");
       throw new Error("STRIPE_SECRET_KEY no está configurada en los secretos");
     }
-    console.log("Stripe key found:", stripeKey.substring(0, 10) + "...");
+    console.log("Stripe key verified");
 
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
