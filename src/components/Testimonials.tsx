@@ -69,6 +69,7 @@ const Testimonials = () => {
         className={`h-4 w-4 ${
           i < rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
         }`}
+        aria-hidden="true"
       />
     ));
   };
@@ -98,7 +99,11 @@ const Testimonials = () => {
               <CardContent className="p-6">
                 <div className="flex items-center gap-4 mb-4">
                   <Avatar className="border-2 border-purple-400/50">
-                    <AvatarImage src={testimonial.avatar} alt={testimonial.name} />
+                    <AvatarImage 
+                      src={testimonial.avatar} 
+                      alt={`Avatar de ${testimonial.name}`}
+                      loading="lazy"
+                    />
                     <AvatarFallback className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
                       {testimonial.name.split(' ').map(n => n[0]).join('')}
                     </AvatarFallback>
@@ -108,10 +113,10 @@ const Testimonials = () => {
                     <p className="text-sm text-gray-300">{testimonial.role}</p>
                     <p className="text-xs text-purple-400">{testimonial.company}</p>
                   </div>
-                  <Quote className="h-6 w-6 text-purple-400/50" />
+                  <Quote className="h-6 w-6 text-purple-400/50" aria-hidden="true" />
                 </div>
                 
-                <div className="flex items-center gap-1 mb-4">
+                <div className="flex items-center gap-1 mb-4" role="img" aria-label={`${testimonial.rating} de 5 estrellas`}>
                   {renderStars(testimonial.rating)}
                 </div>
                 
