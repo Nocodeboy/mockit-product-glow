@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -17,7 +16,12 @@ import {
   Heart,
   Trash2,
   RefreshCw,
-  CreditCard
+  CreditCard,
+  Filter,
+  SortDesc,
+  ExternalLink,
+  Grid,
+  List
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -40,6 +44,11 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [profileData, setProfileData] = useState<any>(null);
   const [mockupsData, setMockupsData] = useState<any[]>([]);
+  const [filteredMockups, setFilteredMockups] = useState<any[]>([]);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'favorites'>('newest');
+  const [filterBy, setFilterBy] = useState<'all' | 'favorites'>('all');
+  const [downloadingItems, setDownloadingItems] = useState<Set<string>>(new Set());
 
   // Cargar datos del perfil
   useEffect(() => {
@@ -93,6 +102,34 @@ const Dashboard = () => {
     loadMockups();
   }, [user]);
 
+  // Filtrar y ordenar mockups
+  useEffect(() => {
+    let filtered = [...mockupsData];
+
+    // Aplicar filtros
+    if (filterBy === 'favorites') {
+      filtered = filtered.filter(mockup => mockup.is_favorite);
+    }
+
+    // Aplicar ordenamiento
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'newest':
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case 'oldest':
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case 'favorites':
+          if (a.is_favorite && !b.is_favorite) return -1;
+          if (!a.is_favorite && b.is_favorite) return 1;
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        default:
+          return 0;
+      }
+    });
+
+    setFilteredMockups(filtered);
+  }, [mockupsData, sortBy, filterBy]);
+
   const handleRefreshSubscription = async () => {
     try {
       await checkSubscription();
@@ -110,11 +147,97 @@ const Dashboard = () => {
     }
   };
 
+  const toggleFavorite = async (mockupId: string, currentFavorite: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('user_mockups')
+        .update({ is_favorite: !currentFavorite })
+        .eq('id', mockupId);
+
+      if (error) throw error;
+
+      setMockupsData(prev => 
+        prev.map(mockup => 
+          mockup.id === mockupId 
+            ? { ...mockup, is_favorite: !currentFavorite }
+            : mockup
+        )
+      );
+
+      toast.success(!currentFavorite ? 'Añadido a favoritos' : 'Eliminado de favoritos');
+    } catch (error) {
+      console.error('Error updating favorite:', error);
+      toast.error('Error al actualizar favorito');
+    }
+  };
+
+  const deleteMockup = async (mockupId: string) => {
+    if (!confirm('¿Estás seguro de que quieres eliminar este mockup?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('user_mockups')
+        .delete()
+        .eq('id', mockupId);
+
+      if (error) throw error;
+
+      setMockupsData(prev => prev.filter(mockup => mockup.id !== mockupId));
+      toast.success('Mockup eliminado correctamente');
+    } catch (error) {
+      console.error('Error deleting mockup:', error);
+      toast.error('Error al eliminar mockup');
+    }
+  };
+
+  const downloadImage = async (imageUrl: string, index: number, mockupId: string) => {
+    const downloadKey = `${mockupId}-${index}`;
+    setDownloadingItems(prev => new Set([...prev, downloadKey]));
+    
+    try {
+      const response = await fetch(imageUrl, { mode: 'cors' });
+      if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+      
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `mockup-${mockupId}-${index + 1}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+      
+      toast.success('Imagen descargada correctamente');
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error('Error al descargar la imagen');
+    } finally {
+      setDownloadingItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(downloadKey);
+        return newSet;
+      });
+    }
+  };
+
+  const downloadAllFromMockup = async (mockup: any) => {
+    toast.success(`Descargando ${mockup.mockup_urls.length} imágenes...`);
+    
+    for (let i = 0; i < mockup.mockup_urls.length; i++) {
+      setTimeout(() => {
+        downloadImage(mockup.mockup_urls[i], i, mockup.id);
+      }, i * 500);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
@@ -269,62 +392,218 @@ const Dashboard = () => {
 
   const GalleryTab = () => (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Mi Galería ({mockupsData.length} mockups)</h3>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            Filtrar
-          </Button>
-          <Button variant="outline" size="sm">
-            Ordenar
-          </Button>
+      {/* Header con controles */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h3 className="text-lg font-semibold">Mi Galería</h3>
+          <p className="text-gray-600">
+            {filteredMockups.length} de {mockupsData.length} generaciones
+            {filterBy === 'favorites' && ' favoritas'}
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {/* Filtros */}
+          <select 
+            value={filterBy} 
+            onChange={(e) => setFilterBy(e.target.value as 'all' | 'favorites')}
+            className="px-3 py-2 border rounded-md text-sm"
+          >
+            <option value="all">Todas</option>
+            <option value="favorites">Favoritas</option>
+          </select>
+          
+          {/* Ordenamiento */}
+          <select 
+            value={sortBy} 
+            onChange={(e) => setSortBy(e.target.value as 'newest' | 'oldest' | 'favorites')}
+            className="px-3 py-2 border rounded-md text-sm"
+          >
+            <option value="newest">Más recientes</option>
+            <option value="oldest">Más antiguas</option>
+            <option value="favorites">Favoritas primero</option>
+          </select>
+          
+          {/* Vista */}
+          <div className="flex border rounded-md overflow-hidden">
+            <Button
+              variant={viewMode === 'grid' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('grid')}
+              className="rounded-none"
+            >
+              <Grid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+              className="rounded-none"
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
-      {mockupsData.length === 0 ? (
+      {filteredMockups.length === 0 ? (
         <Card>
           <CardContent className="text-center py-12">
             <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No tienes mockups aún</h3>
-            <p className="text-gray-600 mb-6">Crea tu primer mockup para verlo aquí</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              {filterBy === 'favorites' ? 'No tienes mockups favoritos' : 'No tienes mockups aún'}
+            </h3>
+            <p className="text-gray-600 mb-6">
+              {filterBy === 'favorites' 
+                ? 'Marca algunos mockups como favoritos para verlos aquí'
+                : 'Crea tu primer mockup para verlo aquí'
+              }
+            </p>
             <Button onClick={() => navigate('/')}>
-              Crear Mockup
+              {filterBy === 'favorites' ? 'Ver todos los mockups' : 'Crear Mockup'}
             </Button>
           </CardContent>
         </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {mockupsData.map((mockup) => (
+      ) : viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          {filteredMockups.map((mockup) => (
             <Card key={mockup.id} className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
-              <div className="relative">
-                <img
-                  src={mockup.original_image_url}
-                  alt="Mockup"
-                  className="w-full h-48 object-cover"
-                />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute top-2 right-2 bg-white/80 hover:bg-white"
-                >
-                  <Heart className={`h-4 w-4 ${mockup.is_favorite ? 'fill-red-500 text-red-500' : 'text-gray-600'}`} />
-                </Button>
-              </div>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">{mockup.style || 'Sin estilo'}</Badge>
+                    {mockup.is_favorite && (
+                      <Heart className="h-4 w-4 fill-red-500 text-red-500" />
+                    )}
+                  </div>
+                  <span className="text-xs text-gray-500">
+                    {formatDate(mockup.created_at)}
+                  </span>
+                </div>
+              </CardHeader>
               
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
-                  <span>{formatDate(mockup.created_at)}</span>
-                  <Badge variant="outline">{mockup.style || 'Sin estilo'}</Badge>
+              <CardContent className="p-4 pt-0">
+                {/* Grid de imágenes */}
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  {mockup.mockup_urls.slice(0, 4).map((url: string, index: number) => (
+                    <div key={index} className="relative aspect-square group">
+                      <img
+                        src={url}
+                        alt={`Mockup ${index + 1}`}
+                        className="w-full h-full object-cover rounded-md cursor-pointer group-hover:opacity-75 transition-opacity"
+                        onClick={() => window.open(url, '_blank')}
+                      />
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-md flex items-center justify-center">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-white hover:bg-white/20"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            downloadImage(url, index, mockup.id);
+                          }}
+                          disabled={downloadingItems.has(`${mockup.id}-${index}`)}
+                        >
+                          {downloadingItems.has(`${mockup.id}-${index}`) ? (
+                            <RefreshCw className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Download className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
                 
+                {mockup.mockup_urls.length > 4 && (
+                  <p className="text-sm text-gray-500 text-center mb-4">
+                    +{mockup.mockup_urls.length - 4} imágenes más
+                  </p>
+                )}
+                
+                {/* Acciones */}
                 <div className="flex gap-2">
-                  <Button size="sm" className="flex-1">
+                  <Button 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => downloadAllFromMockup(mockup)}
+                  >
                     <Download className="h-4 w-4 mr-1" />
-                    Descargar
+                    Descargar Todo
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => toggleFavorite(mockup.id, mockup.is_favorite)}
+                  >
+                    <Heart className={`h-4 w-4 ${mockup.is_favorite ? 'fill-red-500 text-red-500' : ''}`} />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => deleteMockup(mockup.id)}
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        /* Vista de lista */
+        <div className="space-y-4">
+          {filteredMockups.map((mockup) => (
+            <Card key={mockup.id} className="overflow-hidden">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-4">
+                  {/* Preview */}
+                  <div className="flex-shrink-0">
+                    <img
+                      src={mockup.mockup_urls[0]}
+                      alt="Preview"
+                      className="w-16 h-16 object-cover rounded-md cursor-pointer"
+                      onClick={() => window.open(mockup.mockup_urls[0], '_blank')}
+                    />
+                  </div>
+                  
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge variant="outline">{mockup.style || 'Sin estilo'}</Badge>
+                      {mockup.is_favorite && (
+                        <Heart className="h-4 w-4 fill-red-500 text-red-500" />
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      {mockup.mockup_urls.length} imágenes • {formatDate(mockup.created_at)}
+                    </p>
+                  </div>
+                  
+                  {/* Acciones */}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => downloadAllFromMockup(mockup)}
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      Descargar
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => toggleFavorite(mockup.id, mockup.is_favorite)}
+                    >
+                      <Heart className={`h-4 w-4 ${mockup.is_favorite ? 'fill-red-500 text-red-500' : ''}`} />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => deleteMockup(mockup.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
