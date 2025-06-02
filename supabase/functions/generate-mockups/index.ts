@@ -87,7 +87,7 @@ serve(async (req) => {
       }
     }
 
-    console.log("Starting mockup generation using flux-kontext-pro for image:", imageUrl.substring(0, 100));
+    console.log("Starting mockup generation using black-forest-labs/flux-kontext-pro for image:", imageUrl.substring(0, 100));
 
     // Prompts específicos y optimizados para transformar productos
     const productTransformationPrompts = [
@@ -104,37 +104,44 @@ serve(async (req) => {
     const mockups = [];
     const errors = [];
 
-    console.log(`Starting generation of ${productTransformationPrompts.length} mockups using flux-kontext-pro`);
+    console.log(`Starting generation of ${productTransformationPrompts.length} mockups using black-forest-labs/flux-kontext-pro`);
 
-    // Generar cada mockup usando flux-kontext-pro con manejo individual de errores
+    // Generar cada mockup usando black-forest-labs/flux-kontext-pro con manejo individual de errores
     for (let i = 0; i < productTransformationPrompts.length; i++) {
       try {
-        console.log(`Generating mockup ${i + 1}/${productTransformationPrompts.length} with flux-kontext-pro. Prompt: ${productTransformationPrompts[i]}`);
+        console.log(`Generating mockup ${i + 1}/${productTransformationPrompts.length} with black-forest-labs/flux-kontext-pro. Prompt: ${productTransformationPrompts[i]}`);
         
         const startTime = Date.now();
         const output = await replicate.run(
-          "flux-kontext-pro",
+          "black-forest-labs/flux-kontext-pro",
           {
             input: {
               prompt: productTransformationPrompts[i],
-              image: imageUrl,
-              num_outputs: 1,
-              aspect_ratio: "1:1",
-              output_format: "webp",
-              output_quality: 80
+              input_image: imageUrl
             }
           }
         );
         const duration = Date.now() - startTime;
 
-        console.log(`Flux-kontext-pro response for mockup ${i + 1}:`, output);
+        console.log(`Black-forest-labs/flux-kontext-pro response for mockup ${i + 1}:`, output);
 
-        if (output && Array.isArray(output) && output.length > 0) {
+        // flux-kontext-pro returns a single image URL directly
+        if (output && typeof output === 'string') {
+          try {
+            new URL(output);
+            mockups.push(output);
+            console.log(`Successfully generated mockup ${i + 1} with black-forest-labs/flux-kontext-pro in ${duration}ms`);
+          } catch {
+            console.error(`Invalid URL output for mockup ${i + 1}:`, output);
+            errors.push(`Mockup ${i + 1}: Invalid URL format`);
+          }
+        } else if (output && Array.isArray(output) && output.length > 0) {
+          // Fallback if it returns an array
           const imageUrl = output[0];
           try {
             new URL(imageUrl);
             mockups.push(imageUrl);
-            console.log(`Successfully generated mockup ${i + 1} with flux-kontext-pro in ${duration}ms`);
+            console.log(`Successfully generated mockup ${i + 1} with black-forest-labs/flux-kontext-pro in ${duration}ms`);
           } catch {
             console.error(`Invalid URL output for mockup ${i + 1}:`, imageUrl);
             errors.push(`Mockup ${i + 1}: Invalid URL format`);
@@ -144,17 +151,17 @@ serve(async (req) => {
           errors.push(`Mockup ${i + 1}: Invalid output format`);
         }
       } catch (error) {
-        console.error(`Error generating mockup ${i + 1} with flux-kontext-pro:`, error);
+        console.error(`Error generating mockup ${i + 1} with black-forest-labs/flux-kontext-pro:`, error);
         errors.push(`Mockup ${i + 1}: ${error.message || 'Unknown error'}`);
         // Continuar con el siguiente mockup si uno falla
       }
     }
 
-    console.log(`Generation completed with flux-kontext-pro. Success: ${mockups.length}, Errors: ${errors.length}`);
+    console.log(`Generation completed with black-forest-labs/flux-kontext-pro. Success: ${mockups.length}, Errors: ${errors.length}`);
     
     // Si no se generó ningún mockup, devolver error
     if (mockups.length === 0) {
-      console.error('No mockups were generated successfully with flux-kontext-pro. Errors:', errors);
+      console.error('No mockups were generated successfully with black-forest-labs/flux-kontext-pro. Errors:', errors);
       return new Response(
         JSON.stringify({ 
           error: "No se pudieron generar mockups",
@@ -171,11 +178,11 @@ serve(async (req) => {
       mockups,
       total_generated: mockups.length,
       total_requested: productTransformationPrompts.length,
-      model_used: "flux-kontext-pro",
+      model_used: "black-forest-labs/flux-kontext-pro",
       ...(errors.length > 0 && { warnings: errors })
     };
 
-    console.log(`Returning ${mockups.length} successful mockups generated with flux-kontext-pro`);
+    console.log(`Returning ${mockups.length} successful mockups generated with black-forest-labs/flux-kontext-pro`);
     
     return new Response(JSON.stringify(response), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
