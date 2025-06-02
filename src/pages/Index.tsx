@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ImageUpload } from '@/components/ImageUpload';
 import { MockupGallery } from '@/components/MockupGallery';
 import ResultsGallery from '@/components/ResultsGallery';
@@ -15,13 +14,21 @@ import { useNavigate } from 'react-router-dom';
 
 const Index = () => {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading: authLoading } = useAuth();
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [generatedMockups, setGeneratedMockups] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const { toast } = useToast();
+
+  // Reset states when user changes
+  useEffect(() => {
+    if (!user) {
+      setUploadedImage(null);
+      setGeneratedMockups([]);
+    }
+  }, [user]);
 
   const handleImageUpload = (imageUrl: string) => {
     setUploadedImage(imageUrl);
@@ -40,6 +47,7 @@ const Index = () => {
         description: "Necesitas una cuenta para generar mockups",
         variant: "destructive",
       });
+      setAuthMode('signup');
       setShowAuthModal(true);
       return;
     }
@@ -108,15 +116,25 @@ const Index = () => {
 
           if (saveError) {
             console.error('Error saving to gallery:', saveError);
+            // Don't throw error here, mockups were generated successfully
+            toast({
+              title: "Mockups generados",
+              description: "Mockups creados exitosamente, pero no se pudieron guardar en tu galería",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "¡Mockups generados exitosamente!",
+              description: `${validMockups.length} variaciones profesionales guardadas en tu galería`,
+            });
           }
         } catch (saveError) {
           console.error('Error saving mockups to gallery:', saveError);
+          toast({
+            title: "¡Mockups generados exitosamente!",
+            description: `${validMockups.length} variaciones profesionales listas para descargar`,
+          });
         }
-
-        toast({
-          title: "¡Mockups generados exitosamente!",
-          description: `${validMockups.length} variaciones profesionales listas para descargar`,
-        });
       } else {
         console.error('Invalid response structure:', data);
         throw new Error('No se generaron mockups. Respuesta inválida del servidor.');
@@ -124,11 +142,20 @@ const Index = () => {
     } catch (error) {
       console.error('Error generating mockups:', error);
       const errorMessage = error instanceof Error ? error.message : "Error desconocido";
-      toast({
-        title: "Error al generar mockups",
-        description: errorMessage + ". Por favor intenta nuevamente.",
-        variant: "destructive",
-      });
+      
+      if (errorMessage.includes('credits') || errorMessage.includes('créditos')) {
+        toast({
+          title: "Sin créditos suficientes",
+          description: "No tienes créditos suficientes. Mejora tu plan para continuar.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error al generar mockups",
+          description: errorMessage + ". Por favor intenta nuevamente.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -150,8 +177,25 @@ const Index = () => {
       });
     } catch (error) {
       console.error('Error signing out:', error);
+      toast({
+        title: "Error",
+        description: "Error al cerrar sesión",
+        variant: "destructive",
+      });
     }
   };
+
+  // Show loading state while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-400 mx-auto mb-4"></div>
+          <p className="text-white">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative">

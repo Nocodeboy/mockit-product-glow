@@ -25,52 +25,137 @@ const AuthModal = ({ isOpen, onClose, defaultMode = 'login' }: AuthModalProps) =
 
   if (!isOpen) return null;
 
+  const validateForm = () => {
+    if (!email || !password) {
+      toast({
+        title: "Campos requeridos",
+        description: "Email y contraseña son obligatorios",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
+    if (password.length < 6) {
+      toast({
+        title: "Contraseña muy corta",
+        description: "La contraseña debe tener al menos 6 caracteres",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (mode === 'signup' && !fullName.trim()) {
+      toast({
+        title: "Nombre requerido",
+        description: "El nombre completo es obligatorio para registrarse",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) return;
+    
     setIsLoading(true);
 
     try {
       if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({
-          email,
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(),
           password,
           options: {
             data: {
-              full_name: fullName
-            }
+              full_name: fullName.trim()
+            },
+            emailRedirectTo: `${window.location.origin}/`
           }
         });
 
-        if (error) throw error;
+        if (error) {
+          if (error.message.includes('already registered')) {
+            toast({
+              title: "Usuario ya existe",
+              description: "Este email ya está registrado. Intenta iniciar sesión.",
+              variant: "destructive",
+            });
+            setMode('login');
+            return;
+          }
+          throw error;
+        }
 
-        toast({
-          title: "¡Cuenta creada exitosamente!",
-          description: "Revisa tu email para confirmar tu cuenta.",
-        });
+        if (data.user && !data.session) {
+          toast({
+            title: "¡Verifica tu email!",
+            description: "Te hemos enviado un enlace de confirmación. Revisa tu email para activar tu cuenta.",
+          });
+        } else {
+          toast({
+            title: "¡Cuenta creada exitosamente!",
+            description: "Bienvenido a MockIT. Ya puedes empezar a crear mockups.",
+          });
+          onClose();
+        }
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
           password
         });
 
-        if (error) throw error;
+        if (error) {
+          if (error.message.includes('Invalid login credentials')) {
+            toast({
+              title: "Credenciales incorrectas",
+              description: "Email o contraseña incorrectos. Verifica tus datos.",
+              variant: "destructive",
+            });
+          } else if (error.message.includes('Email not confirmed')) {
+            toast({
+              title: "Email no confirmado",
+              description: "Revisa tu email y confirma tu cuenta antes de iniciar sesión.",
+              variant: "destructive",
+            });
+          } else {
+            throw error;
+          }
+          return;
+        }
 
-        toast({
-          title: "¡Bienvenido de vuelta!",
-          description: "Has iniciado sesión correctamente.",
-        });
-        onClose();
+        if (data.user) {
+          toast({
+            title: "¡Bienvenido de vuelta!",
+            description: "Has iniciado sesión correctamente.",
+          });
+          onClose();
+        }
       }
     } catch (error: any) {
       console.error('Auth error:', error);
       toast({
         title: "Error de autenticación",
-        description: error.message || "Ha ocurrido un error inesperado",
+        description: error.message || "Ha ocurrido un error inesperado. Intenta nuevamente.",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const resetForm = () => {
+    setEmail('');
+    setPassword('');
+    setFullName('');
+    setShowPassword(false);
+  };
+
+  const switchMode = () => {
+    resetForm();
+    setMode(mode === 'login' ? 'signup' : 'login');
   };
 
   return (
@@ -99,7 +184,7 @@ const AuthModal = ({ isOpen, onClose, defaultMode = 'login' }: AuthModalProps) =
             {mode === 'signup' && (
               <div className="space-y-2">
                 <Label htmlFor="fullName" className="text-gray-300">
-                  Nombre completo
+                  Nombre completo*
                 </Label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -111,6 +196,7 @@ const AuthModal = ({ isOpen, onClose, defaultMode = 'login' }: AuthModalProps) =
                     onChange={(e) => setFullName(e.target.value)}
                     className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
                     required={mode === 'signup'}
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -118,7 +204,7 @@ const AuthModal = ({ isOpen, onClose, defaultMode = 'login' }: AuthModalProps) =
 
             <div className="space-y-2">
               <Label htmlFor="email" className="text-gray-300">
-                Email
+                Email*
               </Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -130,13 +216,14 @@ const AuthModal = ({ isOpen, onClose, defaultMode = 'login' }: AuthModalProps) =
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
                   required
+                  disabled={isLoading}
                 />
               </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="password" className="text-gray-300">
-                Contraseña
+                Contraseña* {mode === 'signup' && '(mínimo 6 caracteres)'}
               </Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -148,11 +235,14 @@ const AuthModal = ({ isOpen, onClose, defaultMode = 'login' }: AuthModalProps) =
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10 pr-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
                   required
+                  disabled={isLoading}
+                  minLength={6}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-3 text-gray-400 hover:text-white transition-colors"
+                  disabled={isLoading}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -179,8 +269,9 @@ const AuthModal = ({ isOpen, onClose, defaultMode = 'login' }: AuthModalProps) =
             <p className="text-gray-300">
               {mode === 'login' ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}
               <button
-                onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
+                onClick={switchMode}
                 className="ml-2 text-purple-400 hover:text-purple-300 font-semibold transition-colors"
+                disabled={isLoading}
               >
                 {mode === 'login' ? 'Regístrate' : 'Inicia sesión'}
               </button>

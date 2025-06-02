@@ -23,6 +23,12 @@ export const useSubscription = () => {
 
   const checkSubscription = async () => {
     if (!user || !session) {
+      setSubscriptionData({
+        subscribed: false,
+        subscription_tier: 'free',
+        subscription_end: null,
+        credits: 5
+      });
       setLoading(false);
       return;
     }
@@ -40,6 +46,13 @@ export const useSubscription = () => {
       if (error) {
         console.error('Error checking subscription:', error);
         toast.error('Error al verificar suscripción');
+        // Set default values on error
+        setSubscriptionData({
+          subscribed: false,
+          subscription_tier: 'free',
+          subscription_end: null,
+          credits: 5
+        });
         return;
       }
 
@@ -56,6 +69,13 @@ export const useSubscription = () => {
     } catch (error) {
       console.error('Error in checkSubscription:', error);
       toast.error('Error al verificar suscripción');
+      // Set default values on error
+      setSubscriptionData({
+        subscribed: false,
+        subscription_tier: 'free',
+        subscription_end: null,
+        credits: 5
+      });
     } finally {
       setLoading(false);
     }
