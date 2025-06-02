@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import Replicate from "https://esm.sh/replicate@0.25.2"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0"
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,11 +16,36 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Generate mockups function started");
+
+    // Check for required environment variables
     const REPLICATE_API_KEY = Deno.env.get('REPLICATE_API_KEY')
     if (!REPLICATE_API_KEY) {
       console.error('REPLICATE_API_KEY is not configured')
       throw new Error('REPLICATE_API_KEY is not set')
     }
+
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+    );
+
+    // Authenticate user
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      console.error("No authorization header provided");
+      throw new Error("No authorization header provided");
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data } = await supabaseClient.auth.getUser(token);
+    const user = data.user;
+    if (!user?.email) {
+      console.error("User not authenticated or no email");
+      throw new Error("Usuario no autenticado");
+    }
+
+    console.log("User authenticated:", user.email);
 
     const replicate = new Replicate({
       auth: REPLICATE_API_KEY,
@@ -41,24 +67,29 @@ serve(async (req) => {
       )
     }
 
-    // Validar que imageUrl sea una URL válida
+    // Validar que imageUrl sea una URL válida o base64
+    let isValidUrl = false;
     try {
       new URL(imageUrl);
+      isValidUrl = true;
     } catch {
-      console.error('Invalid imageUrl provided:', imageUrl)
-      return new Response(
-        JSON.stringify({ 
-          error: "Invalid imageUrl format" 
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400,
-        }
-      )
+      // Check if it's base64
+      if (!imageUrl.startsWith('data:image/')) {
+        console.error('Invalid imageUrl provided:', imageUrl.substring(0, 100));
+        return new Response(
+          JSON.stringify({ 
+            error: "Invalid imageUrl format" 
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400,
+          }
+        )
+      }
     }
 
-    console.log("Starting mockup generation using flux-kontext-pro for image:", imageUrl)
+    console.log("Starting mockup generation using flux-schnell for image:", imageUrl.substring(0, 100));
 
-    // Prompts específicos y optimizados para transformar productos usando flux-kontext-pro
+    // Prompts específicos y optimizados para transformar productos
     const productTransformationPrompts = [
       "Transform this into a professional studio product photo with clean white background and perfect commercial lighting",
       "Make this an elegant luxury product shot on marble surface with soft natural lighting and premium aesthetic",
@@ -67,42 +98,46 @@ serve(async (req) => {
       "Make this a professional product photo in natural setting with warm ambient lighting and authentic context",
       "Convert to dramatic luxury product showcase with dark background and accent lighting",
       "Transform into bright, airy product photography with soft diffused lighting and clean white background",
-      "Make this an artisanal product photo on wooden surface with natural textures and warm lighting",
-      "Convert to sleek modern product display with geometric background and contemporary design",
-      "Transform into elegant product photography with subtle reflections and premium studio setup"
+      "Make this an artisanal product photo on wooden surface with natural textures and warm lighting"
     ];
 
     const mockups = [];
     const errors = [];
 
-    console.log(`Starting generation of ${productTransformationPrompts.length} mockups`)
+    console.log(`Starting generation of ${productTransformationPrompts.length} mockups`);
 
-    // Generar cada mockup usando flux-kontext-pro con manejo individual de errores
+    // Generar cada mockup usando flux-schnell con manejo individual de errores
     for (let i = 0; i < productTransformationPrompts.length; i++) {
       try {
         console.log(`Generating mockup ${i + 1}/${productTransformationPrompts.length} with prompt: ${productTransformationPrompts[i]}`);
         
         const startTime = Date.now();
         const output = await replicate.run(
-          "black-forest-labs/flux-kontext-pro",
+          "black-forest-labs/flux-schnell",
           {
             input: {
               prompt: productTransformationPrompts[i],
-              input_image: imageUrl,
-              aspect_ratio: "1:1"
+              image: imageUrl,
+              go_fast: true,
+              megapixels: "1",
+              num_outputs: 1,
+              aspect_ratio: "1:1",
+              output_format: "webp",
+              output_quality: 80,
+              num_inference_steps: 4
             }
           }
         );
         const duration = Date.now() - startTime;
 
-        if (output && typeof output === 'string') {
-          // Validar que la salida sea una URL válida
+        if (output && Array.isArray(output) && output.length > 0) {
+          const imageUrl = output[0];
           try {
-            new URL(output);
-            mockups.push(output);
+            new URL(imageUrl);
+            mockups.push(imageUrl);
             console.log(`Successfully generated mockup ${i + 1} in ${duration}ms`);
           } catch {
-            console.error(`Invalid URL output for mockup ${i + 1}:`, output);
+            console.error(`Invalid URL output for mockup ${i + 1}:`, imageUrl);
             errors.push(`Mockup ${i + 1}: Invalid URL format`);
           }
         } else {

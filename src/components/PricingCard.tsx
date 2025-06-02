@@ -41,9 +41,12 @@ const PricingCard = ({ plan }: PricingCardProps) => {
     if (isCurrentPlan) {
       // Abrir portal del cliente para gestionar suscripción
       try {
+        setLoading(true);
         await openCustomerPortal();
       } catch (error) {
         console.error('Error opening portal:', error);
+      } finally {
+        setLoading(false);
       }
       return;
     }
@@ -62,7 +65,10 @@ const PricingCard = ({ plan }: PricingCardProps) => {
       if (response?.url) {
         console.log('Redirecting to Stripe checkout:', response.url);
         // Abrir Stripe checkout en nueva ventana
-        window.open(response.url, '_blank');
+        const newWindow = window.open(response.url, '_blank');
+        if (!newWindow) {
+          toast.error('Por favor permite ventanas emergentes para continuar con el pago');
+        }
       } else {
         throw new Error('No se recibió URL de checkout');
       }

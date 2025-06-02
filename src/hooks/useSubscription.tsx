@@ -97,6 +97,8 @@ export const useSubscription = () => {
         }
       });
 
+      console.log('Checkout response:', { data, error });
+
       if (error) {
         console.error('Error creating checkout:', error);
         toast.error(`Error al crear sesión de pago: ${error.message}`);
@@ -109,7 +111,13 @@ export const useSubscription = () => {
         throw new Error(data.error);
       }
 
-      console.log('Checkout session created:', data);
+      if (!data?.url) {
+        console.error('No URL received from checkout session');
+        toast.error('No se recibió URL de pago válida');
+        throw new Error('No se recibió URL de pago válida');
+      }
+
+      console.log('Checkout session created successfully:', data.url);
       return data;
     } catch (error) {
       console.error('Error in createCheckoutSession:', error);
@@ -145,6 +153,8 @@ export const useSubscription = () => {
       // Abrir en nueva ventana
       if (data?.url) {
         window.open(data.url, '_blank');
+      } else {
+        throw new Error('No se recibió URL del portal');
       }
     } catch (error) {
       console.error('Error in openCustomerPortal:', error);

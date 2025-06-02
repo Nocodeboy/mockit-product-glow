@@ -70,7 +70,7 @@ const Index = () => {
         description: "Enviando tu imagen a nuestra IA para crear los mockups",
       });
 
-      console.log("Calling generate-mockups function with imageUrl:", uploadedImage);
+      console.log("Calling generate-mockups function with imageUrl:", uploadedImage.substring(0, 100));
 
       const { data, error } = await supabase.functions.invoke('generate-mockups', {
         body: { 
