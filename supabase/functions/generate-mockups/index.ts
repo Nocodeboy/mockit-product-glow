@@ -87,7 +87,7 @@ serve(async (req) => {
       }
     }
 
-    console.log("Starting mockup generation using flux-schnell for image:", imageUrl.substring(0, 100));
+    console.log("Starting mockup generation using flux-kontext-pro for image:", imageUrl.substring(0, 100));
 
     // Prompts específicos y optimizados para transformar productos
     const productTransformationPrompts = [
@@ -104,38 +104,37 @@ serve(async (req) => {
     const mockups = [];
     const errors = [];
 
-    console.log(`Starting generation of ${productTransformationPrompts.length} mockups`);
+    console.log(`Starting generation of ${productTransformationPrompts.length} mockups using flux-kontext-pro`);
 
-    // Generar cada mockup usando flux-schnell con manejo individual de errores
+    // Generar cada mockup usando flux-kontext-pro con manejo individual de errores
     for (let i = 0; i < productTransformationPrompts.length; i++) {
       try {
-        console.log(`Generating mockup ${i + 1}/${productTransformationPrompts.length} with prompt: ${productTransformationPrompts[i]}`);
+        console.log(`Generating mockup ${i + 1}/${productTransformationPrompts.length} with flux-kontext-pro. Prompt: ${productTransformationPrompts[i]}`);
         
         const startTime = Date.now();
         const output = await replicate.run(
-          "black-forest-labs/flux-schnell",
+          "flux-kontext-pro",
           {
             input: {
               prompt: productTransformationPrompts[i],
               image: imageUrl,
-              go_fast: true,
-              megapixels: "1",
               num_outputs: 1,
               aspect_ratio: "1:1",
               output_format: "webp",
-              output_quality: 80,
-              num_inference_steps: 4
+              output_quality: 80
             }
           }
         );
         const duration = Date.now() - startTime;
+
+        console.log(`Flux-kontext-pro response for mockup ${i + 1}:`, output);
 
         if (output && Array.isArray(output) && output.length > 0) {
           const imageUrl = output[0];
           try {
             new URL(imageUrl);
             mockups.push(imageUrl);
-            console.log(`Successfully generated mockup ${i + 1} in ${duration}ms`);
+            console.log(`Successfully generated mockup ${i + 1} with flux-kontext-pro in ${duration}ms`);
           } catch {
             console.error(`Invalid URL output for mockup ${i + 1}:`, imageUrl);
             errors.push(`Mockup ${i + 1}: Invalid URL format`);
@@ -145,17 +144,17 @@ serve(async (req) => {
           errors.push(`Mockup ${i + 1}: Invalid output format`);
         }
       } catch (error) {
-        console.error(`Error generating mockup ${i + 1}:`, error);
+        console.error(`Error generating mockup ${i + 1} with flux-kontext-pro:`, error);
         errors.push(`Mockup ${i + 1}: ${error.message || 'Unknown error'}`);
         // Continuar con el siguiente mockup si uno falla
       }
     }
 
-    console.log(`Generation completed. Success: ${mockups.length}, Errors: ${errors.length}`);
+    console.log(`Generation completed with flux-kontext-pro. Success: ${mockups.length}, Errors: ${errors.length}`);
     
     // Si no se generó ningún mockup, devolver error
     if (mockups.length === 0) {
-      console.error('No mockups were generated successfully. Errors:', errors);
+      console.error('No mockups were generated successfully with flux-kontext-pro. Errors:', errors);
       return new Response(
         JSON.stringify({ 
           error: "No se pudieron generar mockups",
@@ -172,10 +171,11 @@ serve(async (req) => {
       mockups,
       total_generated: mockups.length,
       total_requested: productTransformationPrompts.length,
+      model_used: "flux-kontext-pro",
       ...(errors.length > 0 && { warnings: errors })
     };
 
-    console.log(`Returning ${mockups.length} successful mockups`);
+    console.log(`Returning ${mockups.length} successful mockups generated with flux-kontext-pro`);
     
     return new Response(JSON.stringify(response), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
