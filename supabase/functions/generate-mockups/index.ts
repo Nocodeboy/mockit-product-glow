@@ -16,15 +16,15 @@ serve(async (req) => {
   }
 
   try {
-    console.log("=== Generate mockups function started ===");
+    console.log("🚀 === Generate mockups function started ===");
 
     // Check for required environment variables
     const REPLICATE_API_KEY = Deno.env.get('REPLICATE_API_KEY')
     if (!REPLICATE_API_KEY) {
-      console.error('REPLICATE_API_KEY is not configured')
+      console.error('❌ REPLICATE_API_KEY is not configured')
       throw new Error('REPLICATE_API_KEY is not set')
     }
-    console.log("REPLICATE_API_KEY found successfully");
+    console.log("✅ REPLICATE_API_KEY found successfully");
 
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -34,7 +34,7 @@ serve(async (req) => {
     // Authenticate user
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      console.error("No authorization header provided");
+      console.error("❌ No authorization header provided");
       throw new Error("No authorization header provided");
     }
 
@@ -42,24 +42,19 @@ serve(async (req) => {
     const { data } = await supabaseClient.auth.getUser(token);
     const user = data.user;
     if (!user?.email) {
-      console.error("User not authenticated or no email");
+      console.error("❌ User not authenticated or no email");
       throw new Error("Usuario no autenticado");
     }
 
-    console.log("User authenticated:", user.email);
-
-    const replicate = new Replicate({
-      auth: REPLICATE_API_KEY,
-    })
-    console.log("Replicate client initialized");
+    console.log("✅ User authenticated:", user.email);
 
     const body = await req.json()
-    console.log("Request body received");
+    console.log("📝 Request body received");
     const { imageUrl, style = "professional" } = body
 
     // Validaciones de entrada
     if (!imageUrl) {
-      console.error('No imageUrl provided in request')
+      console.error('❌ No imageUrl provided in request')
       return new Response(
         JSON.stringify({ 
           error: "Missing required field: imageUrl is required" 
@@ -70,142 +65,107 @@ serve(async (req) => {
       )
     }
 
-    console.log("Image URL received, length:", imageUrl.length);
+    console.log("🖼️ Image URL type:", imageUrl.startsWith('data:') ? "base64" : "url");
+    console.log("📏 Image URL length:", imageUrl.length);
 
-    // Prompts específicos para transformar productos
-    const productTransformationPrompts = [
-      "Transform this into a professional studio product photo with clean white background and perfect commercial lighting",
-      "Make this an elegant luxury product shot on marble surface with soft natural lighting and premium aesthetic",
-      "Convert this to a modern lifestyle product photo in contemporary office setting with natural daylight",
-      "Transform into premium e-commerce product photography with gradient background and studio lighting"
-    ];
-
-    const mockups = [];
-    const errors = [];
-
-    console.log(`Starting generation of ${productTransformationPrompts.length} mockups`);
-
-    // Generar cada mockup con manejo individual de errores
-    for (let i = 0; i < productTransformationPrompts.length; i++) {
-      try {
-        console.log(`\n--- Generating mockup ${i + 1}/${productTransformationPrompts.length} ---`);
-        console.log(`Prompt: "${productTransformationPrompts[i]}"`);
-        
-        const startTime = Date.now();
-        
-        // Preparar input para flux-kontext-pro según la documentación oficial
-        const replicateInput = {
-          prompt: productTransformationPrompts[i],
-          input_image: imageUrl
-        };
-        
-        console.log("Calling replicate.run with black-forest-labs/flux-kontext-pro...");
-        console.log("Input prepared:", {
-          prompt: replicateInput.prompt,
-          input_image_type: imageUrl.startsWith('data:') ? "base64" : "url",
-          input_image_length: imageUrl.length
-        });
-
-        const output = await replicate.run(
-          "black-forest-labs/flux-kontext-pro",
-          {
-            input: replicateInput
-          }
-        );
-        
-        const duration = Date.now() - startTime;
-        console.log(`Replicate call completed in ${duration}ms`);
-        console.log("Raw output from Replicate:", typeof output, output);
-
-        // Procesar la respuesta - flux-kontext-pro devuelve una URL directamente
-        let imageUrl_result = null;
-        
-        if (typeof output === 'string') {
-          // Si es una string directa (URL)
-          imageUrl_result = output;
-          console.log("Output is direct URL string");
-        } else if (Array.isArray(output) && output.length > 0) {
-          // Si es un array, tomar el primer elemento
-          imageUrl_result = output[0];
-          console.log("Output is array, taking first element");
-        } else if (output && typeof output === 'object') {
-          // Si es un objeto, buscar propiedades comunes para URLs de imagen
-          imageUrl_result = output.url || output.image_url || output.output || output.result;
-          console.log("Output is object, extracted URL");
-        }
-
-        if (imageUrl_result && typeof imageUrl_result === 'string') {
-          try {
-            new URL(imageUrl_result);
-            mockups.push(imageUrl_result);
-            console.log(`✅ Successfully generated mockup ${i + 1}: ${imageUrl_result}`);
-          } catch {
-            console.error(`❌ Invalid URL format for mockup ${i + 1}:`, imageUrl_result);
-            errors.push(`Mockup ${i + 1}: Invalid URL format - ${imageUrl_result}`);
-          }
-        } else {
-          console.error(`❌ No valid image URL found in output for mockup ${i + 1}:`, output);
-          errors.push(`Mockup ${i + 1}: No valid image URL in response`);
-        }
-
-      } catch (error) {
-        console.error(`❌ Error generating mockup ${i + 1}:`, error);
-        console.error("Error details:", {
-          name: error.name,
-          message: error.message,
-          stack: error.stack?.substring(0, 500)
-        });
-        errors.push(`Mockup ${i + 1}: ${error.message || 'Unknown error'}`);
-      }
-    }
-
-    console.log(`\n=== Generation Summary ===`);
-    console.log(`Successful mockups: ${mockups.length}`);
-    console.log(`Failed attempts: ${errors.length}`);
-    
-    // Si no se generó ningún mockup, devolver error detallado
-    if (mockups.length === 0) {
-      console.error('❌ No mockups were generated successfully');
-      console.error('All errors:', errors);
-      return new Response(
-        JSON.stringify({ 
-          error: "No se pudieron generar mockups",
-          details: errors,
-          debug_info: {
-            model_used: "black-forest-labs/flux-kontext-pro",
-            input_image_type: imageUrl.startsWith('data:') ? "base64" : "url",
-            prompts_attempted: productTransformationPrompts.length,
-            replicate_api_configured: !!REPLICATE_API_KEY
-          }
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500,
-        }
-      )
-    }
-
-    // Preparar respuesta exitosa
-    const response = {
-      mockups,
-      total_generated: mockups.length,
-      total_requested: productTransformationPrompts.length,
-      model_used: "black-forest-labs/flux-kontext-pro",
-      ...(errors.length > 0 && { warnings: errors })
-    };
-
-    console.log(`✅ Returning ${mockups.length} successful mockups`);
-    console.log("Response prepared successfully");
-    
-    return new Response(JSON.stringify(response), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
+    // Initialize Replicate client
+    console.log("🔧 Initializing Replicate client...");
+    const replicate = new Replicate({
+      auth: REPLICATE_API_KEY,
     })
+    console.log("✅ Replicate client initialized");
+
+    // Test simple prompt first
+    const testPrompt = "Transform this into a professional studio product photo with clean white background and perfect commercial lighting";
+    
+    console.log("\n🧪 === Starting TEST Generation ===");
+    console.log("📝 Test prompt:", testPrompt);
+    
+    try {
+      console.log("⏰ Starting Replicate call at:", new Date().toISOString());
+      
+      // Prepare input according to flux-kontext-pro documentation
+      const input = {
+        prompt: testPrompt,
+        input_image: imageUrl
+      };
+      
+      console.log("📤 Calling replicate.run with model: black-forest-labs/flux-kontext-pro");
+      console.log("📦 Input keys:", Object.keys(input));
+      
+      // Set a timeout to avoid hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Replicate call timed out after 60 seconds')), 60000);
+      });
+      
+      const replicatePromise = replicate.run("black-forest-labs/flux-kontext-pro", { input });
+      
+      console.log("⏳ Waiting for Replicate response...");
+      const output = await Promise.race([replicatePromise, timeoutPromise]);
+      
+      console.log("🎉 Replicate call completed successfully!");
+      console.log("📦 Raw output type:", typeof output);
+      console.log("📦 Raw output:", output);
+
+      // Process response
+      let resultUrl = null;
+      
+      if (typeof output === 'string') {
+        resultUrl = output;
+        console.log("✅ Output is direct URL string");
+      } else if (Array.isArray(output) && output.length > 0) {
+        resultUrl = output[0];
+        console.log("✅ Output is array, took first element");
+      } else if (output && typeof output === 'object') {
+        resultUrl = output.url || output.image_url || output.output || output.result;
+        console.log("✅ Output is object, extracted URL property");
+      }
+
+      if (!resultUrl || typeof resultUrl !== 'string') {
+        console.error("❌ No valid URL found in response:", output);
+        throw new Error('No valid image URL in Replicate response');
+      }
+
+      // Validate URL
+      try {
+        new URL(resultUrl);
+        console.log("✅ Generated URL is valid:", resultUrl);
+      } catch {
+        console.error("❌ Invalid URL format:", resultUrl);
+        throw new Error('Generated URL is not valid');
+      }
+
+      // Return single successful result for now
+      const response = {
+        mockups: [resultUrl],
+        total_generated: 1,
+        total_requested: 1,
+        model_used: "black-forest-labs/flux-kontext-pro",
+        test_mode: true
+      };
+
+      console.log("🎊 SUCCESS! Returning response with 1 mockup");
+      
+      return new Response(JSON.stringify(response), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      })
+
+    } catch (replicateError) {
+      console.error("💥 Replicate API Error:");
+      console.error("- Error name:", replicateError.name);
+      console.error("- Error message:", replicateError.message);
+      console.error("- Error stack:", replicateError.stack?.substring(0, 500));
+      
+      throw new Error(`Replicate API failed: ${replicateError.message}`);
+    }
 
   } catch (error) {
     console.error("💥 CRITICAL ERROR in generate-mockups function:");
-    console.error("Error name:", error.name);
-    console.error("Error message:", error.message);
-    console.error("Error stack:", error.stack?.substring(0, 1000));
+    console.error("- Error name:", error.name);
+    console.error("- Error message:", error.message);
+    console.error("- Error stack:", error.stack?.substring(0, 1000));
+    console.error("- Timestamp:", new Date().toISOString());
     
     return new Response(JSON.stringify({ 
       error: error.message || "An unexpected error occurred",
@@ -213,7 +173,8 @@ serve(async (req) => {
       debug_info: {
         error_type: error.name,
         function: "generate-mockups",
-        replicate_api_configured: !!Deno.env.get('REPLICATE_API_KEY')
+        replicate_api_configured: !!Deno.env.get('REPLICATE_API_KEY'),
+        user_authenticated: true
       }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
