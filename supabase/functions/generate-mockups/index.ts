@@ -54,7 +54,7 @@ serve(async (req) => {
     console.log("Replicate client initialized");
 
     const body = await req.json()
-    console.log("Request body received:", JSON.stringify(body, null, 2));
+    console.log("Request body received");
     const { imageUrl, style = "professional" } = body
 
     // Validaciones de entrada
@@ -70,48 +70,14 @@ serve(async (req) => {
       )
     }
 
-    // Log del tipo de imagen recibida
-    const isBase64 = imageUrl.startsWith('data:image/');
-    const isUrl = !isBase64;
-    console.log("Image type detected:", isBase64 ? "base64" : "url");
-    console.log("Image source preview:", imageUrl.substring(0, 100) + "...");
+    console.log("Image URL received, length:", imageUrl.length);
 
-    // Para flux-kontext-pro, podemos usar tanto base64 como URLs directamente
-    let processedImageUrl = imageUrl;
-    
-    // Si es base64, lo usamos directamente ya que Replicate lo acepta
-    if (isBase64) {
-      console.log("Using base64 image directly");
-    } else {
-      // Validar que sea una URL válida si no es base64
-      try {
-        new URL(imageUrl);
-        console.log("Using URL image directly");
-      } catch {
-        console.error('Invalid imageUrl format provided:', imageUrl.substring(0, 100));
-        return new Response(
-          JSON.stringify({ 
-            error: "Invalid imageUrl format" 
-          }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 400,
-          }
-        )
-      }
-    }
-
-    console.log("=== Starting mockup generation with black-forest-labs/flux-kontext-pro ===");
-
-    // Prompts específicos y optimizados para transformar productos
+    // Prompts específicos para transformar productos
     const productTransformationPrompts = [
       "Transform this into a professional studio product photo with clean white background and perfect commercial lighting",
       "Make this an elegant luxury product shot on marble surface with soft natural lighting and premium aesthetic",
       "Convert this to a modern lifestyle product photo in contemporary office setting with natural daylight",
-      "Transform into premium e-commerce product photography with gradient background and studio lighting",
-      "Make this a professional product photo in natural setting with warm ambient lighting and authentic context",
-      "Convert to dramatic luxury product showcase with dark background and accent lighting",
-      "Transform into bright, airy product photography with soft diffused lighting and clean white background",
-      "Make this an artisanal product photo on wooden surface with natural textures and warm lighting"
+      "Transform into premium e-commerce product photography with gradient background and studio lighting"
     ];
 
     const mockups = [];
@@ -127,19 +93,19 @@ serve(async (req) => {
         
         const startTime = Date.now();
         
-        // Preparar input para flux-kontext-pro
+        // Preparar input para flux-kontext-pro según la documentación oficial
         const replicateInput = {
           prompt: productTransformationPrompts[i],
-          input_image: processedImageUrl
+          input_image: imageUrl
         };
         
-        console.log("Replicate input prepared:", {
+        console.log("Calling replicate.run with black-forest-labs/flux-kontext-pro...");
+        console.log("Input prepared:", {
           prompt: replicateInput.prompt,
-          input_image_type: isBase64 ? "base64" : "url",
-          input_image_preview: replicateInput.input_image.substring(0, 100) + "..."
+          input_image_type: imageUrl.startsWith('data:') ? "base64" : "url",
+          input_image_length: imageUrl.length
         });
 
-        console.log("Calling replicate.run with black-forest-labs/flux-kontext-pro...");
         const output = await replicate.run(
           "black-forest-labs/flux-kontext-pro",
           {
@@ -151,31 +117,31 @@ serve(async (req) => {
         console.log(`Replicate call completed in ${duration}ms`);
         console.log("Raw output from Replicate:", typeof output, output);
 
-        // Procesar la respuesta
-        let imageUrl = null;
+        // Procesar la respuesta - flux-kontext-pro devuelve una URL directamente
+        let imageUrl_result = null;
         
         if (typeof output === 'string') {
           // Si es una string directa (URL)
-          imageUrl = output;
+          imageUrl_result = output;
           console.log("Output is direct URL string");
         } else if (Array.isArray(output) && output.length > 0) {
           // Si es un array, tomar el primer elemento
-          imageUrl = output[0];
+          imageUrl_result = output[0];
           console.log("Output is array, taking first element");
         } else if (output && typeof output === 'object') {
           // Si es un objeto, buscar propiedades comunes para URLs de imagen
-          imageUrl = output.url || output.image_url || output.output || output.result;
+          imageUrl_result = output.url || output.image_url || output.output || output.result;
           console.log("Output is object, extracted URL");
         }
 
-        if (imageUrl && typeof imageUrl === 'string') {
+        if (imageUrl_result && typeof imageUrl_result === 'string') {
           try {
-            new URL(imageUrl);
-            mockups.push(imageUrl);
-            console.log(`✅ Successfully generated mockup ${i + 1}: ${imageUrl}`);
+            new URL(imageUrl_result);
+            mockups.push(imageUrl_result);
+            console.log(`✅ Successfully generated mockup ${i + 1}: ${imageUrl_result}`);
           } catch {
-            console.error(`❌ Invalid URL format for mockup ${i + 1}:`, imageUrl);
-            errors.push(`Mockup ${i + 1}: Invalid URL format - ${imageUrl}`);
+            console.error(`❌ Invalid URL format for mockup ${i + 1}:`, imageUrl_result);
+            errors.push(`Mockup ${i + 1}: Invalid URL format - ${imageUrl_result}`);
           }
         } else {
           console.error(`❌ No valid image URL found in output for mockup ${i + 1}:`, output);
@@ -187,7 +153,7 @@ serve(async (req) => {
         console.error("Error details:", {
           name: error.name,
           message: error.message,
-          stack: error.stack
+          stack: error.stack?.substring(0, 500)
         });
         errors.push(`Mockup ${i + 1}: ${error.message || 'Unknown error'}`);
       }
@@ -207,8 +173,9 @@ serve(async (req) => {
           details: errors,
           debug_info: {
             model_used: "black-forest-labs/flux-kontext-pro",
-            input_image_type: isBase64 ? "base64" : "url",
-            prompts_attempted: productTransformationPrompts.length
+            input_image_type: imageUrl.startsWith('data:') ? "base64" : "url",
+            prompts_attempted: productTransformationPrompts.length,
+            replicate_api_configured: !!REPLICATE_API_KEY
           }
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -227,7 +194,7 @@ serve(async (req) => {
     };
 
     console.log(`✅ Returning ${mockups.length} successful mockups`);
-    console.log("Response:", JSON.stringify(response, null, 2));
+    console.log("Response prepared successfully");
     
     return new Response(JSON.stringify(response), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -238,14 +205,15 @@ serve(async (req) => {
     console.error("💥 CRITICAL ERROR in generate-mockups function:");
     console.error("Error name:", error.name);
     console.error("Error message:", error.message);
-    console.error("Error stack:", error.stack);
+    console.error("Error stack:", error.stack?.substring(0, 1000));
     
     return new Response(JSON.stringify({ 
       error: error.message || "An unexpected error occurred",
       timestamp: new Date().toISOString(),
       debug_info: {
         error_type: error.name,
-        function: "generate-mockups"
+        function: "generate-mockups",
+        replicate_api_configured: !!Deno.env.get('REPLICATE_API_KEY')
       }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
