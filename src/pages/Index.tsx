@@ -2,6 +2,9 @@
 import React, { useState } from 'react';
 import { ImageUpload } from '@/components/ImageUpload';
 import { MockupGallery } from '@/components/MockupGallery';
+import ResultsGallery from '@/components/ResultsGallery';
+import Testimonials from '@/components/Testimonials';
+import PricingSection from '@/components/PricingSection';
 import { useToast } from '@/hooks/use-toast';
 import { Sparkles, Camera, Zap, RotateCcw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,7 +36,7 @@ const Index = () => {
     }
     
     setIsGenerating(true);
-    setGeneratedMockups([]); // Limpiar mockups anteriores
+    setGeneratedMockups([]);
     
     try {
       toast({
@@ -58,7 +61,6 @@ const Index = () => {
       }
 
       if (data && data.mockups && Array.isArray(data.mockups) && data.mockups.length > 0) {
-        // Validar que todas las URLs sean válidas
         const validMockups = data.mockups.filter((mockup: string) => {
           try {
             new URL(mockup);
@@ -185,6 +187,11 @@ const Index = () => {
           )}
         </div>
       </div>
+
+      {/* New Landing Page Sections */}
+      <ResultsGallery />
+      <Testimonials />
+      <PricingSection />
     </div>
   );
 };
