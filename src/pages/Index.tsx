@@ -5,6 +5,7 @@ import { MockupGallery } from '@/components/MockupGallery';
 import ResultsGallery from '@/components/ResultsGallery';
 import Testimonials from '@/components/Testimonials';
 import PricingSection from '@/components/PricingSection';
+import { UserMenu } from '@/components/UserMenu';
 import { useToast } from '@/hooks/use-toast';
 import { Sparkles, Camera, Zap, RotateCcw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -101,29 +102,34 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Header */}
       <div className="container mx-auto px-4 py-8">
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Sparkles className="h-8 w-8 text-purple-400" />
-            <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-              MockIT
-            </h1>
+        <div className="flex justify-between items-center mb-12">
+          <div className="text-center flex-1">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <Sparkles className="h-8 w-8 text-purple-400" />
+              <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                MockIT
+              </h1>
+            </div>
+            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+              Transforma la foto de tu producto en 10 mockups profesionales con IA
+            </p>
+            <div className="flex items-center justify-center gap-6 mt-6 text-sm text-gray-400">
+              <div className="flex items-center gap-2">
+                <Camera className="h-4 w-4" />
+                <span>Sube tu imagen</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Zap className="h-4 w-4" />
+                <span>IA genera mockups</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4" />
+                <span>Descarga resultados</span>
+              </div>
+            </div>
           </div>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-            Transforma la foto de tu producto en 10 mockups profesionales con IA
-          </p>
-          <div className="flex items-center justify-center gap-6 mt-6 text-sm text-gray-400">
-            <div className="flex items-center gap-2">
-              <Camera className="h-4 w-4" />
-              <span>Sube tu imagen</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Zap className="h-4 w-4" />
-              <span>IA genera mockups</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4" />
-              <span>Descarga resultados</span>
-            </div>
+          <div className="absolute top-4 right-4">
+            <UserMenu />
           </div>
         </div>
 
