@@ -7,17 +7,24 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, LayoutDashboard } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export const UserMenu = () => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   if (!user) return null;
 
   const getInitials = (email: string) => {
     return email.substring(0, 2).toUpperCase();
+  };
+
+  const handleDashboard = () => {
+    navigate('/dashboard');
   };
 
   return (
@@ -40,6 +47,12 @@ export const UserMenu = () => {
             </p>
           </div>
         </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={handleDashboard}>
+          <LayoutDashboard className="mr-2 h-4 w-4" />
+          <span>Panel de Control</span>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={signOut}>
           <LogOut className="mr-2 h-4 w-4" />
           <span>Cerrar sesión</span>

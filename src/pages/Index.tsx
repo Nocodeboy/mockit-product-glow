@@ -9,12 +9,14 @@ import { UserMenu } from '@/components/UserMenu';
 import { useToast } from '@/hooks/use-toast';
 import { Sparkles, Camera, Zap, RotateCcw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [generatedMockups, setGeneratedMockups] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleImageUpload = (imageUrl: string) => {
     setUploadedImage(imageUrl);
@@ -31,6 +33,15 @@ const Index = () => {
       toast({
         title: "Error",
         description: "No hay imagen para procesar",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "Debes estar autenticado para generar mockups",
         variant: "destructive",
       });
       return;
@@ -77,6 +88,27 @@ const Index = () => {
         }
 
         setGeneratedMockups(validMockups);
+
+        // Guardar la generación en la base de datos
+        try {
+          const { error: insertError } = await supabase
+            .from('user_mockups')
+            .insert({
+              user_id: user.id,
+              original_image_url: uploadedImage,
+              mockup_urls: validMockups,
+              style: "professional"
+            });
+
+          if (insertError) {
+            console.error('Error saving to database:', insertError);
+            // No mostramos error al usuario para no interrumpir el flujo
+          }
+        } catch (dbError) {
+          console.error('Database error:', dbError);
+          // No mostramos error al usuario para no interrumpir el flujo
+        }
+
         toast({
           title: "¡Mockups generados exitosamente!",
           description: `${validMockups.length} variaciones profesionales listas para descargar`,
