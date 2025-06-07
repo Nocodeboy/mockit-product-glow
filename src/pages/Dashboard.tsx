@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserGenerations } from '@/components/dashboard/UserGenerations';
 import { AccountSettings } from '@/components/dashboard/AccountSettings';
@@ -9,11 +9,36 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sparkles, Image, Settings, CreditCard, ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const success = searchParams.get('success');
+    const canceled = searchParams.get('canceled');
+
+    if (success === 'true') {
+      toast({
+        title: "¡Pago exitoso!",
+        description: "Tu suscripción o compra de créditos se ha procesado correctamente.",
+      });
+      // Limpiar los parámetros de la URL
+      navigate('/dashboard', { replace: true });
+    } else if (canceled === 'true') {
+      toast({
+        title: "Pago cancelado",
+        description: "El proceso de pago fue cancelado.",
+        variant: "destructive",
+      });
+      // Limpiar los parámetros de la URL
+      navigate('/dashboard', { replace: true });
+    }
+  }, [searchParams, toast, navigate]);
 
   const handleBackToHome = () => {
     navigate('/');

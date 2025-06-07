@@ -4,8 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Check, Zap, Crown, Building } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const PricingSection = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+
   const plans = [
     {
       id: 'free',
@@ -25,8 +31,9 @@ const PricingSection = () => {
         'Marca de agua en mockups',
         'Sin acceso a estilos premium'
       ],
-      buttonText: 'Empezar Gratis',
-      popular: false
+      buttonText: 'Plan Actual',
+      popular: false,
+      stripeId: null
     },
     {
       id: 'pro',
@@ -45,8 +52,9 @@ const PricingSection = () => {
         'Plantillas exclusivas',
         'API access'
       ],
-      buttonText: 'Empezar Prueba Gratis',
-      popular: true
+      buttonText: 'Suscribirse',
+      popular: true,
+      stripeId: 'pro'
     },
     {
       id: 'enterprise',
@@ -67,10 +75,52 @@ const PricingSection = () => {
         'Integración con herramientas',
         'Entrenamiento personalizado'
       ],
-      buttonText: 'Contactar Ventas',
-      popular: false
+      buttonText: 'Suscribirse',
+      popular: false,
+      stripeId: 'enterprise'
     }
   ];
+
+  const handleSubscribe = async (planId: string) => {
+    if (!user) {
+      toast({
+        title: "Autenticación requerida",
+        description: "Debes iniciar sesión para suscribirte a un plan",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (planId === 'free') {
+      toast({
+        title: "Plan gratuito",
+        description: "Ya estás en el plan gratuito",
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: {
+          priceId: planId,
+          planType: 'subscription'
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error) {
+      console.error('Error creating checkout:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo iniciar el proceso de pago. Intenta nuevamente.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <section className="py-20 bg-slate-900">
@@ -139,6 +189,7 @@ const PricingSection = () => {
                   </div>
 
                   <Button 
+                    onClick={() => handleSubscribe(plan.id)}
                     className={`w-full ${
                       plan.popular
                         ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
