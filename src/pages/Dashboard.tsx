@@ -8,7 +8,7 @@ import { UserMenu } from '@/components/UserMenu';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sparkles, Image, Settings, CreditCard, ArrowLeft } from 'lucide-react';
+import { Sparkles, Image, Settings, ArrowLeft } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
@@ -27,7 +27,6 @@ const Dashboard = () => {
         title: "¡Pago exitoso!",
         description: "Tu suscripción o compra de créditos se ha procesado correctamente.",
       });
-      // Limpiar los parámetros de la URL
       navigate('/dashboard', { replace: true });
     } else if (canceled === 'true') {
       toast({
@@ -35,7 +34,6 @@ const Dashboard = () => {
         description: "El proceso de pago fue cancelado.",
         variant: "destructive",
       });
-      // Limpiar los parámetros de la URL
       navigate('/dashboard', { replace: true });
     }
   }, [searchParams, toast, navigate]);
@@ -58,37 +56,47 @@ const Dashboard = () => {
               <ArrowLeft className="h-4 w-4 mr-2" />
               Volver al inicio
             </Button>
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-6 w-6 text-purple-400" />
-              <h1 className="text-2xl font-bold text-white">Panel de Control</h1>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg">
+                <Sparkles className="h-6 w-6 text-white" />
+              </div>
+              <h1 className="text-3xl font-bold text-white">Panel de Control</h1>
             </div>
           </div>
           <UserMenu />
         </div>
 
         {/* Welcome Section */}
-        <Card className="mb-8 bg-white/10 backdrop-blur-sm border border-white/20">
+        <Card className="mb-8 border-white/20 bg-gradient-to-r from-white/10 to-white/5 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle className="text-white">
-              ¡Bienvenido, {user?.email?.split('@')[0]}!
+            <CardTitle className="text-white text-xl">
+              ¡Bienvenido de vuelta, {user?.email?.split('@')[0]}! 👋
             </CardTitle>
-            <CardDescription className="text-gray-300">
-              Administra tus generaciones, cuenta y créditos desde aquí
+            <CardDescription className="text-gray-300 text-base">
+              Administra tus generaciones, cuenta y créditos desde tu panel personalizado
             </CardDescription>
           </CardHeader>
         </Card>
 
-        {/* Credit Balance */}
-        <CreditBalance />
+        {/* Credit Balance with improved styling */}
+        <div className="mb-8">
+          <CreditBalance />
+        </div>
 
         {/* Main Dashboard Content */}
         <Tabs defaultValue="generations" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="generations" className="flex items-center gap-2">
+          <TabsList className="grid w-full grid-cols-2 mb-8 bg-white/10 backdrop-blur-sm border-white/20">
+            <TabsTrigger 
+              value="generations" 
+              className="flex items-center gap-2 data-[state=active]:bg-white/20 data-[state=active]:text-white text-gray-300"
+            >
               <Image className="h-4 w-4" />
               Mis Generaciones
             </TabsTrigger>
-            <TabsTrigger value="account" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="account" 
+              className="flex items-center gap-2 data-[state=active]:bg-white/20 data-[state=active]:text-white text-gray-300"
+            >
               <Settings className="h-4 w-4" />
               Configuración
             </TabsTrigger>
