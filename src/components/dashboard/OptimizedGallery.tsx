@@ -65,10 +65,13 @@ export const OptimizedGallery: React.FC<OptimizedGalleryProps> = ({
       <div className="text-center py-16">
         <ImageIcon className="h-20 w-20 text-muted-foreground mx-auto mb-6 opacity-50" />
         <h3 className="text-2xl font-semibold text-foreground mb-3">
-          No tienes generaciones aún
+          No hay generaciones para mostrar
         </h3>
         <p className="text-muted-foreground text-lg max-w-md mx-auto">
-          Sube tu primera imagen para comenzar a crear mockups profesionales con AI
+          {mockups.length === 0 ? 
+            "Sube tu primera imagen para comenzar a crear mockups profesionales con AI" :
+            "No tienes generaciones marcadas como favoritas aún"
+          }
         </p>
       </div>
     );
@@ -172,7 +175,7 @@ export const OptimizedGallery: React.FC<OptimizedGalleryProps> = ({
 
       {/* Gallery Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] p-0">
+        <DialogContent className="max-w-6xl max-h-[95vh] p-0">
           <DialogHeader className="p-6 pb-0">
             <div className="flex items-center justify-between">
               <DialogTitle className="text-xl font-semibold">
@@ -227,11 +230,13 @@ export const OptimizedGallery: React.FC<OptimizedGalleryProps> = ({
                   {/* Original Image */}
                   <CarouselItem>
                     <div className="relative">
-                      <img
-                        src={selectedMockup.original_image_url}
-                        alt="Imagen original"
-                        className="w-full h-96 object-contain bg-muted rounded-lg"
-                      />
+                      <div className="w-full h-[500px] bg-muted rounded-lg overflow-hidden flex items-center justify-center">
+                        <img
+                          src={selectedMockup.original_image_url}
+                          alt="Imagen original"
+                          className="max-w-full max-h-full object-contain"
+                        />
+                      </div>
                       <div className="absolute bottom-4 left-4 bg-black/80 text-white px-3 py-1 rounded-full">
                         Original
                       </div>
@@ -249,11 +254,13 @@ export const OptimizedGallery: React.FC<OptimizedGalleryProps> = ({
                   {selectedMockup.mockup_urls.map((url, index) => (
                     <CarouselItem key={index}>
                       <div className="relative">
-                        <img
-                          src={url}
-                          alt={`Transformación ${index + 1}`}
-                          className="w-full h-96 object-contain bg-muted rounded-lg"
-                        />
+                        <div className="w-full h-[500px] bg-muted rounded-lg overflow-hidden flex items-center justify-center">
+                          <img
+                            src={url}
+                            alt={`Transformación ${index + 1}`}
+                            className="max-w-full max-h-full object-contain"
+                          />
+                        </div>
                         <div className="absolute bottom-4 left-4 bg-black/80 text-white px-3 py-1 rounded-full">
                           Variación {index + 1}
                         </div>
@@ -268,8 +275,8 @@ export const OptimizedGallery: React.FC<OptimizedGalleryProps> = ({
                     </CarouselItem>
                   ))}
                 </CarouselContent>
-                <CarouselPrevious />
-                <CarouselNext />
+                <CarouselPrevious className="left-4" />
+                <CarouselNext className="right-4" />
               </Carousel>
             </div>
           )}

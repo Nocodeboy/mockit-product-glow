@@ -2,8 +2,9 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
-import { ImageIcon } from 'lucide-react';
+import { ImageIcon, Heart, Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { OptimizedGallery } from './OptimizedGallery';
 
@@ -128,6 +129,8 @@ export const UserGenerations = () => {
     }
   };
 
+  const favoritesMockups = mockups.filter(mockup => mockup.is_favorite);
+
   if (loading) {
     return (
       <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
@@ -151,19 +154,49 @@ export const UserGenerations = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-3 text-2xl">
           <ImageIcon className="h-7 w-7 text-primary" />
-          Mis Generaciones {mockups.length > 0 && `(${mockups.length})`}
+          Mis Generaciones
         </CardTitle>
         <CardDescription className="text-base">
           Gestiona y descarga tus mockups generados con inteligencia artificial
         </CardDescription>
       </CardHeader>
       <CardContent className="p-6">
-        <OptimizedGallery
-          mockups={mockups}
-          onToggleFavorite={handleToggleFavorite}
-          onDelete={handleDelete}
-          onDownload={handleDownload}
-        />
+        <Tabs defaultValue="all" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6 bg-slate-800/90 backdrop-blur-sm border-slate-700/50">
+            <TabsTrigger 
+              value="all" 
+              className="flex items-center gap-2 data-[state=active]:bg-slate-700/50 data-[state=active]:text-white text-gray-300"
+            >
+              <ImageIcon className="h-4 w-4" />
+              Todas ({mockups.length})
+            </TabsTrigger>
+            <TabsTrigger 
+              value="favorites" 
+              className="flex items-center gap-2 data-[state=active]:bg-slate-700/50 data-[state=active]:text-white text-gray-300"
+            >
+              <Star className="h-4 w-4" />
+              Favoritas ({favoritesMockups.length})
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="all">
+            <OptimizedGallery
+              mockups={mockups}
+              onToggleFavorite={handleToggleFavorite}
+              onDelete={handleDelete}
+              onDownload={handleDownload}
+            />
+          </TabsContent>
+          
+          <TabsContent value="favorites">
+            <OptimizedGallery
+              mockups={favoritesMockups}
+              onToggleFavorite={handleToggleFavorite}
+              onDelete={handleDelete}
+              onDownload={handleDownload}
+            />
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
