@@ -1,5 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Replicate from "https://esm.sh/replicate@0.25.2"
 
 const corsHeaders = {
@@ -16,10 +17,21 @@ serve(async (req) => {
 
   try {
     const REPLICATE_API_KEY = Deno.env.get('REPLICATE_API_KEY')
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+
     if (!REPLICATE_API_KEY) {
       console.error('REPLICATE_API_KEY is not configured')
       throw new Error('REPLICATE_API_KEY is not set')
     }
+
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('Supabase configuration missing')
+      throw new Error('Supabase configuration is not complete')
+    }
+
+    // Initialize Supabase client with service role key for storage operations
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
     const replicate = new Replicate({
       auth: REPLICATE_API_KEY,
@@ -28,7 +40,31 @@ serve(async (req) => {
     const body = await req.json()
     const { imageUrl, style = "professional" } = body
 
-    // Validaciones de entrada más robustas
+    // Get user from auth header
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Authentication required" }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 401,
+        }
+      )
+    }
+
+    // Get user session to extract user ID
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+    
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Invalid authentication" }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 401,
+        }
+      )
+    }
+
+    // Validaciones de entrada
     if (!imageUrl) {
       console.error('No imageUrl provided in request')
       return new Response(
@@ -58,6 +94,45 @@ serve(async (req) => {
 
     console.log("Starting mockup generation using flux-kontext-pro for image:", imageUrl)
 
+    // Helper function to download and store image
+    const downloadAndStoreImage = async (imageUrl: string, fileName: string): Promise<string> => {
+      try {
+        // Download the image from Replicate
+        const response = await fetch(imageUrl)
+        if (!response.ok) {
+          throw new Error(`Failed to download image: ${response.status}`)
+        }
+
+        const imageBlob = await response.blob()
+        const arrayBuffer = await imageBlob.arrayBuffer()
+        const uint8Array = new Uint8Array(arrayBuffer)
+
+        // Upload to Supabase Storage
+        const filePath = `${user.id}/${fileName}`
+        const { data, error } = await supabase.storage
+          .from('user-mockups')
+          .upload(filePath, uint8Array, {
+            contentType: 'image/webp',
+            upsert: true
+          })
+
+        if (error) {
+          console.error('Storage upload error:', error)
+          throw new Error(`Storage upload failed: ${error.message}`)
+        }
+
+        // Get public URL
+        const { data: publicUrlData } = supabase.storage
+          .from('user-mockups')
+          .getPublicUrl(filePath)
+
+        return publicUrlData.publicUrl
+      } catch (error) {
+        console.error('Error downloading and storing image:', error)
+        throw error
+      }
+    }
+
     // Prompts específicos y optimizados para transformar productos usando flux-kontext-pro
     const productTransformationPrompts = [
       "Transform this into a professional studio product photo with clean white background and perfect commercial lighting",
@@ -76,6 +151,17 @@ serve(async (req) => {
     const errors = [];
 
     console.log(`Starting generation of ${productTransformationPrompts.length} mockups`)
+
+    // Store the original image first
+    let storedOriginalUrl = imageUrl
+    try {
+      const originalFileName = `original_${Date.now()}.webp`
+      storedOriginalUrl = await downloadAndStoreImage(imageUrl, originalFileName)
+      console.log('Original image stored successfully:', storedOriginalUrl)
+    } catch (error) {
+      console.error('Failed to store original image, using original URL:', error)
+      // Continue with original URL if storage fails
+    }
 
     // Generar cada mockup usando flux-kontext-pro con manejo individual de errores
     for (let i = 0; i < productTransformationPrompts.length; i++) {
@@ -99,11 +185,18 @@ serve(async (req) => {
           // Validar que la salida sea una URL válida
           try {
             new URL(output);
+            
+            // Download and store the generated image
+            const fileName = `mockup_${i + 1}_${Date.now()}.webp`
+            const storedUrl = await downloadAndStoreImage(output, fileName)
+            
+            mockups.push(storedUrl);
+            console.log(`Successfully generated and stored mockup ${i + 1} in ${duration}ms`);
+          } catch (storageError) {
+            console.error(`Error storing mockup ${i + 1}:`, storageError);
+            // Fallback to original URL if storage fails
             mockups.push(output);
-            console.log(`Successfully generated mockup ${i + 1} in ${duration}ms`);
-          } catch {
-            console.error(`Invalid URL output for mockup ${i + 1}:`, output);
-            errors.push(`Mockup ${i + 1}: Invalid URL format`);
+            console.log(`Using original URL for mockup ${i + 1} due to storage error`);
           }
         } else {
           console.error(`Invalid output format for mockup ${i + 1}:`, output);
@@ -135,12 +228,13 @@ serve(async (req) => {
     // Si se generaron algunos mockups pero hubo errores, incluir información de errores
     const response = {
       mockups,
+      originalImageUrl: storedOriginalUrl,
       total_generated: mockups.length,
       total_requested: productTransformationPrompts.length,
       ...(errors.length > 0 && { warnings: errors })
     };
 
-    console.log(`Returning ${mockups.length} successful mockups`);
+    console.log(`Returning ${mockups.length} successful mockups with permanent storage`);
     
     return new Response(JSON.stringify(response), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -89,13 +89,13 @@ const Index = () => {
 
         setGeneratedMockups(validMockups);
 
-        // Guardar la generación en la base de datos
+        // Guardar la generación en la base de datos con URLs permanentes
         try {
           const { error: insertError } = await supabase
             .from('user_mockups')
             .insert({
               user_id: user.id,
-              original_image_url: uploadedImage,
+              original_image_url: data.originalImageUrl || uploadedImage,
               mockup_urls: validMockups,
               style: "professional"
             });
@@ -103,6 +103,8 @@ const Index = () => {
           if (insertError) {
             console.error('Error saving to database:', insertError);
             // No mostramos error al usuario para no interrumpir el flujo
+          } else {
+            console.log('Generation saved to database with permanent URLs');
           }
         } catch (dbError) {
           console.error('Database error:', dbError);
@@ -111,7 +113,7 @@ const Index = () => {
 
         toast({
           title: "¡Mockups generados exitosamente!",
-          description: `${validMockups.length} variaciones profesionales listas para descargar`,
+          description: `${validMockups.length} variaciones profesionales guardadas permanentemente`,
         });
       } else {
         console.error('Invalid response structure:', data);
@@ -156,7 +158,7 @@ const Index = () => {
               </div>
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4" />
-                <span>Descarga resultados</span>
+                <span>Guardado permanente</span>
               </div>
             </div>
           </div>
@@ -200,7 +202,7 @@ const Index = () => {
                   </div>
                   <div className="flex-1">
                     <p className="text-gray-300 mb-4">
-                      ¡Perfecto! Ahora genera 10 mockups profesionales de tu producto.
+                      ¡Perfecto! Ahora genera 10 mockups profesionales que se guardarán permanentemente.
                     </p>
                     <button
                       onClick={handleGenerateMockups}
@@ -210,10 +212,10 @@ const Index = () => {
                       {isGenerating ? (
                         <span className="flex items-center gap-2">
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                          Generando...
+                          Generando y guardando...
                         </span>
                       ) : (
-                        "Generar Mockups"
+                        "Generar y Guardar Mockups"
                       )}
                     </button>
                   </div>
