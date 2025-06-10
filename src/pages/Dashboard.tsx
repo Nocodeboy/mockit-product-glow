@@ -66,8 +66,8 @@ const Dashboard = () => {
           <UserMenu />
         </div>
 
-        {/* Welcome Section */}
-        <Card className="mb-8 border-white/20 bg-gradient-to-r from-white/10 to-white/5 backdrop-blur-sm">
+        {/* Welcome Section - Made darker */}
+        <Card className="mb-8 border-slate-700/50 bg-slate-800/90 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="text-white text-xl">
               ¡Bienvenido de vuelta, {user?.email?.split('@')[0]}! 👋
@@ -78,24 +78,24 @@ const Dashboard = () => {
           </CardHeader>
         </Card>
 
-        {/* Credit Balance with improved styling */}
+        {/* Credit Balance with darker styling */}
         <div className="mb-8">
           <CreditBalance />
         </div>
 
         {/* Main Dashboard Content */}
         <Tabs defaultValue="generations" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-8 bg-white/10 backdrop-blur-sm border-white/20">
+          <TabsList className="grid w-full grid-cols-2 mb-8 bg-slate-800/90 backdrop-blur-sm border-slate-700/50">
             <TabsTrigger 
               value="generations" 
-              className="flex items-center gap-2 data-[state=active]:bg-white/20 data-[state=active]:text-white text-gray-300"
+              className="flex items-center gap-2 data-[state=active]:bg-slate-700/50 data-[state=active]:text-white text-gray-300"
             >
               <Image className="h-4 w-4" />
               Mis Generaciones
             </TabsTrigger>
             <TabsTrigger 
               value="account" 
-              className="flex items-center gap-2 data-[state=active]:bg-white/20 data-[state=active]:text-white text-gray-300"
+              className="flex items-center gap-2 data-[state=active]:bg-slate-700/50 data-[state=active]:text-white text-gray-300"
             >
               <Settings className="h-4 w-4" />
               Configuración

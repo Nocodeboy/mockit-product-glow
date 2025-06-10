@@ -117,13 +117,13 @@ export const CreditBalance = () => {
 
   if (loading) {
     return (
-      <Card className="mb-8 bg-white/10 backdrop-blur-sm border border-white/20">
+      <Card className="mb-8 bg-slate-800/90 backdrop-blur-sm border border-slate-700/50">
         <CardContent className="p-6">
           <div className="animate-pulse flex space-x-4">
-            <div className="rounded-full bg-white/20 h-12 w-12"></div>
+            <div className="rounded-full bg-slate-700/50 h-12 w-12"></div>
             <div className="flex-1 space-y-2 py-1">
-              <div className="h-4 bg-white/20 rounded w-3/4"></div>
-              <div className="h-4 bg-white/20 rounded w-1/2"></div>
+              <div className="h-4 bg-slate-700/50 rounded w-3/4"></div>
+              <div className="h-4 bg-slate-700/50 rounded w-1/2"></div>
             </div>
           </div>
         </CardContent>
@@ -135,7 +135,7 @@ export const CreditBalance = () => {
     <div className="space-y-6 mb-8">
       {/* Subscription Status */}
       {subscriptionInfo.subscribed && (
-        <Card className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 backdrop-blur-sm border border-green-400/30">
+        <Card className="bg-gradient-to-r from-green-600/20 to-emerald-600/20 backdrop-blur-sm border border-green-500/30">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-white">
               <Crown className="h-5 w-5" />
@@ -158,7 +158,7 @@ export const CreditBalance = () => {
               </div>
               <Button
                 onClick={handleManageSubscription}
-                className="bg-white/20 hover:bg-white/30 border border-white/40"
+                className="bg-slate-700/50 hover:bg-slate-600/50 border border-slate-600/50"
               >
                 Gestionar Suscripción
               </Button>
@@ -167,8 +167,8 @@ export const CreditBalance = () => {
         </Card>
       )}
 
-      {/* Credit Balance */}
-      <Card className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 backdrop-blur-sm border border-purple-400/30">
+      {/* Credit Balance - Made darker */}
+      <Card className="bg-slate-800/90 backdrop-blur-sm border border-slate-700/50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-white">
             <CreditCard className="h-5 w-5" />
@@ -198,7 +198,7 @@ export const CreditBalance = () => {
               <Button
                 onClick={() => handleBuyCredits('credits_50')}
                 variant="outline"
-                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                className="bg-slate-700/50 border-slate-600/50 text-white hover:bg-slate-600/50"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 50 créditos - $4.99
@@ -206,7 +206,7 @@ export const CreditBalance = () => {
               <Button
                 onClick={() => handleBuyCredits('credits_100')}
                 variant="outline"
-                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                className="bg-slate-700/50 border-slate-600/50 text-white hover:bg-slate-600/50"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 100 créditos - $9.99
@@ -214,7 +214,7 @@ export const CreditBalance = () => {
               <Button
                 onClick={() => handleBuyCredits('credits_500')}
                 variant="outline"
-                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                className="bg-slate-700/50 border-slate-600/50 text-white hover:bg-slate-600/50"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 500 créditos - $39.99
