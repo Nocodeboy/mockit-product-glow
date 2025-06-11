@@ -1,13 +1,15 @@
-
 import React, { useState } from 'react';
 import { ImageUpload } from '@/components/ImageUpload';
 import { MockupGallery } from '@/components/MockupGallery';
+import { InteractiveTutorial } from '@/components/onboarding/InteractiveTutorial';
+import { CreditsBanner } from '@/components/CreditsBanner';
 import ResultsGallery from '@/components/ResultsGallery';
 import Testimonials from '@/components/Testimonials';
 import PricingSection from '@/components/PricingSection';
 import { UserMenu } from '@/components/UserMenu';
 import { Footer } from '@/components/Footer';
 import { useToast } from '@/hooks/use-toast';
+import { useOnboarding } from '@/hooks/useOnboarding';
 import { Sparkles, Camera, Zap, RotateCcw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,6 +20,18 @@ const Index = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+  const {
+    isFirstVisit,
+    currentStep,
+    showTutorial,
+    nextStep,
+    prevStep,
+    skipTutorial,
+    completeTutorial
+  } = useOnboarding();
+
+  // Mock credits for demonstration - in real app this would come from user data
+  const userCredits = 5;
 
   const handleImageUpload = (imageUrl: string) => {
     setUploadedImage(imageUrl);
@@ -135,9 +149,20 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      {/* Tutorial Overlay */}
+      {showTutorial && (
+        <InteractiveTutorial
+          currentStep={currentStep}
+          onNext={nextStep}
+          onPrev={prevStep}
+          onSkip={skipTutorial}
+          onComplete={completeTutorial}
+        />
+      )}
+
       {/* Header */}
       <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-12">
+        <div className="flex justify-between items-center mb-8">
           <div className="text-center flex-1">
             <div className="flex items-center justify-center gap-2 mb-4">
               <Sparkles className="h-8 w-8 text-purple-400" />
@@ -145,9 +170,13 @@ const Index = () => {
                 MockIT
               </h1>
             </div>
-            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-300 max-w-2xl mx-auto mb-4">
               Transforma la foto de tu producto en 10 mockups profesionales con IA
             </p>
+            
+            {/* Credits Banner */}
+            <CreditsBanner credits={userCredits} isFirstVisit={isFirstVisit} />
+            
             <div className="flex items-center justify-center gap-6 mt-6 text-sm text-gray-400">
               <div className="flex items-center gap-2">
                 <Camera className="h-4 w-4" />
@@ -207,7 +236,7 @@ const Index = () => {
                     </p>
                     <button
                       onClick={handleGenerateMockups}
-                      disabled={isGenerating}
+                      disabled={isGenerating || userCredits === 0}
                       className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:transform-none"
                     >
                       {isGenerating ? (
@@ -215,6 +244,8 @@ const Index = () => {
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                           Generando y guardando...
                         </span>
+                      ) : userCredits === 0 ? (
+                        "Sin créditos disponibles"
                       ) : (
                         "Generar y Guardar Mockups"
                       )}
@@ -229,7 +260,7 @@ const Index = () => {
         </div>
       </div>
 
-      {/* New Landing Page Sections */}
+      {/* Landing Page Sections */}
       <ResultsGallery />
       <Testimonials />
       <PricingSection />
