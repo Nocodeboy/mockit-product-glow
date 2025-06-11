@@ -6,6 +6,7 @@ import ResultsGallery from '@/components/ResultsGallery';
 import Testimonials from '@/components/Testimonials';
 import PricingSection from '@/components/PricingSection';
 import { UserMenu } from '@/components/UserMenu';
+import { Footer } from '@/components/Footer';
 import { useToast } from '@/hooks/use-toast';
 import { Sparkles, Camera, Zap, RotateCcw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -232,6 +233,9 @@ const Index = () => {
       <ResultsGallery />
       <Testimonials />
       <PricingSection />
+      
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };
