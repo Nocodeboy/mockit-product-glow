@@ -40,7 +40,7 @@ export const usePerformanceMonitoring = ({
     const memoryInfo = (performance as any).memory;
 
     const metrics: PerformanceMetrics = {
-      loadTime: navigation?.loadEventEnd - navigation?.navigationStart || 0,
+      loadTime: navigation?.loadEventEnd - navigation?.startTime || 0,
       renderTime: paintEntries.find(entry => entry.name === 'first-contentful-paint')?.startTime || 0,
       memoryUsage: memoryInfo?.usedJSHeapSize,
       networkRequests: resourceEntries.length,

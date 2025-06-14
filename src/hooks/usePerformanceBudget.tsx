@@ -38,7 +38,7 @@ export const usePerformanceBudget = (customBudget?: Partial<PerformanceBudget>) 
     // Verificar tiempo de carga
     const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
     if (navigation) {
-      const loadTime = navigation.loadEventEnd - navigation.navigationStart;
+      const loadTime = navigation.loadEventEnd - navigation.startTime;
       if (loadTime > budget.maxLoadTime) {
         newViolations.push({
           metric: 'Load Time',
