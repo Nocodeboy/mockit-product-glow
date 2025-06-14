@@ -6,12 +6,12 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { CreditCard, Plus, Sparkles, Crown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useCredits } from '@/hooks/useCredits';
 
 export const CreditBalance = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [credits, setCredits] = useState<number>(0);
-  const [loading, setLoading] = useState(true);
+  const { credits, loading, error } = useCredits();
   const [subscriptionInfo, setSubscriptionInfo] = useState<{
     subscribed: boolean;
     subscription_tier?: string;
@@ -19,29 +19,6 @@ export const CreditBalance = () => {
   }>({ subscribed: false });
 
   useEffect(() => {
-    const fetchCredits = async () => {
-      if (!user) return;
-
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('credits')
-          .eq('id', user.id)
-          .single();
-
-        if (error) {
-          console.error('Error fetching credits:', error);
-          return;
-        }
-
-        setCredits(data?.credits || 0);
-      } catch (error) {
-        console.error('Error:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     const fetchSubscription = async () => {
       if (!user) return;
 
@@ -59,7 +36,6 @@ export const CreditBalance = () => {
       }
     };
 
-    fetchCredits();
     fetchSubscription();
   }, [user]);
 
@@ -126,6 +102,16 @@ export const CreditBalance = () => {
               <div className="h-4 bg-slate-700/50 rounded w-1/2"></div>
             </div>
           </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="mb-8 bg-red-900/20 backdrop-blur-sm border border-red-700/50">
+        <CardContent className="p-6">
+          <p className="text-red-300">Error al cargar créditos: {error}</p>
         </CardContent>
       </Card>
     );

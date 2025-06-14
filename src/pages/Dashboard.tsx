@@ -1,13 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { UserGenerations } from '@/components/dashboard/UserGenerations';
+import { SuspenseUserGenerations } from '@/components/LazyComponents';
 import { AccountSettings } from '@/components/dashboard/AccountSettings';
 import { CreditBalance } from '@/components/dashboard/CreditBalance';
 import { UserMenu } from '@/components/UserMenu';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Sparkles, Image, Settings, ArrowLeft } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -79,9 +80,11 @@ const Dashboard = () => {
         </Card>
 
         {/* Credit Balance with darker styling */}
-        <div className="mb-8">
-          <CreditBalance />
-        </div>
+        <ErrorBoundary>
+          <div className="mb-8">
+            <CreditBalance />
+          </div>
+        </ErrorBoundary>
 
         {/* Main Dashboard Content */}
         <Tabs defaultValue="generations" className="w-full">
@@ -103,11 +106,15 @@ const Dashboard = () => {
           </TabsList>
           
           <TabsContent value="generations">
-            <UserGenerations />
+            <ErrorBoundary>
+              <SuspenseUserGenerations />
+            </ErrorBoundary>
           </TabsContent>
           
           <TabsContent value="account">
-            <AccountSettings />
+            <ErrorBoundary>
+              <AccountSettings />
+            </ErrorBoundary>
           </TabsContent>
         </Tabs>
       </div>

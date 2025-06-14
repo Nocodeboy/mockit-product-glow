@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { ImageUpload } from '@/components/ImageUpload';
-import { MockupGallery } from '@/components/MockupGallery';
+import { SuspenseMockupGallery } from '@/components/LazyComponents';
 import { InteractiveTutorial } from '@/components/onboarding/InteractiveTutorial';
 import { CreditsBanner } from '@/components/CreditsBanner';
 import ResultsGallery from '@/components/ResultsGallery';
@@ -9,8 +9,10 @@ import Testimonials from '@/components/Testimonials';
 import PricingSection from '@/components/PricingSection';
 import { UserMenu } from '@/components/UserMenu';
 import { Footer } from '@/components/Footer';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useToast } from '@/hooks/use-toast';
 import { useOnboarding } from '@/hooks/useOnboarding';
+import { useCredits } from '@/hooks/useCredits';
 import { Sparkles, Camera, Zap, RotateCcw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,9 +21,9 @@ const Index = () => {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [generatedMockups, setGeneratedMockups] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [userCredits, setUserCredits] = useState(5);
   const { toast } = useToast();
   const { user } = useAuth();
+  const { credits, loading: creditsLoading, consumeCredit } = useCredits();
   const {
     isFirstVisit,
     currentStep,
@@ -61,7 +63,8 @@ const Index = () => {
       return;
     }
     
-    if (userCredits <= 0) {
+    // Use real credits from database
+    if (credits <= 0) {
       toast({
         title: "Sin créditos",
         description: "No tienes créditos suficientes para generar mockups",
@@ -74,6 +77,12 @@ const Index = () => {
     setGeneratedMockups([]);
     
     try {
+      // Consume credit first
+      const creditConsumed = await consumeCredit();
+      if (!creditConsumed) {
+        return; // Error already shown by hook
+      }
+
       toast({
         title: "Iniciando generación...",
         description: "Enviando tu imagen a nuestra IA para crear los mockups",
@@ -111,9 +120,8 @@ const Index = () => {
         }
 
         setGeneratedMockups(validMockups);
-        setUserCredits(prev => Math.max(0, prev - 1));
 
-        // Guardar la generación en la base de datos con URLs permanentes
+        // Save to database with permanent URLs
         try {
           const { error: insertError } = await supabase
             .from('user_mockups')
@@ -192,7 +200,7 @@ const Index = () => {
             </p>
             
             {/* Credits Banner */}
-            <CreditsBanner credits={userCredits} isFirstVisit={isFirstVisit} />
+            <CreditsBanner credits={credits} isFirstVisit={isFirstVisit} />
             
             <div className="flex items-center justify-center gap-6 mt-6 text-sm text-gray-400">
               <div className="flex items-center gap-2">
@@ -217,7 +225,9 @@ const Index = () => {
         {/* Main Content */}
         <div className="max-w-4xl mx-auto">
           {!uploadedImage ? (
-            <ImageUpload onImageUpload={handleImageUpload} />
+            <ErrorBoundary>
+              <ImageUpload onImageUpload={handleImageUpload} />
+            </ErrorBoundary>
           ) : (
             <div className="space-y-8">
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
@@ -253,7 +263,7 @@ const Index = () => {
                     </p>
                     <button
                       onClick={handleGenerateMockups}
-                      disabled={isGenerating || userCredits === 0}
+                      disabled={isGenerating || credits === 0 || creditsLoading}
                       className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:transform-none"
                     >
                       {isGenerating ? (
@@ -261,7 +271,7 @@ const Index = () => {
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                           Generando y guardando...
                         </span>
-                      ) : userCredits === 0 ? (
+                      ) : credits === 0 ? (
                         "Sin créditos disponibles"
                       ) : (
                         "Generar y Guardar Mockups"
@@ -271,19 +281,29 @@ const Index = () => {
                 </div>
               </div>
 
-              <MockupGallery mockups={generatedMockups} isLoading={isGenerating} />
+              <ErrorBoundary>
+                <SuspenseMockupGallery mockups={generatedMockups} isLoading={isGenerating} />
+              </ErrorBoundary>
             </div>
           )}
         </div>
       </div>
 
       {/* Landing Page Sections */}
-      <ResultsGallery />
-      <Testimonials />
-      <PricingSection />
+      <ErrorBoundary>
+        <ResultsGallery />
+      </ErrorBoundary>
+      <ErrorBoundary>
+        <Testimonials />
+      </ErrorBoundary>
+      <ErrorBoundary>
+        <PricingSection />
+      </ErrorBoundary>
       
       {/* Footer */}
-      <Footer />
+      <ErrorBoundary>
+        <Footer />
+      </ErrorBoundary>
     </div>
   );
 };
