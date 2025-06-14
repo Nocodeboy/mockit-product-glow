@@ -4,6 +4,13 @@ import { Link } from 'react-router-dom';
 import { Sparkles, Mail, MapPin, Phone } from 'lucide-react';
 
 export const Footer = () => {
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <footer className="bg-slate-900/95 backdrop-blur-sm border-t border-slate-700/50 text-gray-300">
       <div className="container mx-auto px-4 py-12">
@@ -38,14 +45,20 @@ export const Footer = () => {
                 </Link>
               </li>
               <li>
-                <a href="#pricing" className="hover:text-purple-400 transition-colors">
+                <button 
+                  onClick={() => scrollToSection('pricing')} 
+                  className="hover:text-purple-400 transition-colors text-left"
+                >
                   Precios
-                </a>
+                </button>
               </li>
               <li>
-                <a href="#testimonials" className="hover:text-purple-400 transition-colors">
+                <button 
+                  onClick={() => scrollToSection('testimonials')} 
+                  className="hover:text-purple-400 transition-colors text-left"
+                >
                   Testimonios
-                </a>
+                </button>
               </li>
             </ul>
           </div>
@@ -65,9 +78,12 @@ export const Footer = () => {
                 </a>
               </li>
               <li>
-                <a href="#faq" className="hover:text-purple-400 transition-colors">
+                <button 
+                  onClick={() => scrollToSection('faq')} 
+                  className="hover:text-purple-400 transition-colors text-left"
+                >
                   FAQ
-                </a>
+                </button>
               </li>
               <li>
                 <a href="mailto:soporte@mockit.com" className="hover:text-purple-400 transition-colors">

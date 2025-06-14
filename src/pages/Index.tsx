@@ -312,16 +312,20 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Landing Page Sections */}
+      {/* Landing Page Sections with IDs for smooth scrolling */}
       <ErrorBoundary>
         <ResultsGallery />
       </ErrorBoundary>
-      <ErrorBoundary>
-        <Testimonials />
-      </ErrorBoundary>
-      <ErrorBoundary>
-        <PricingSection />
-      </ErrorBoundary>
+      <div id="testimonials">
+        <ErrorBoundary>
+          <Testimonials />
+        </ErrorBoundary>
+      </div>
+      <div id="pricing">
+        <ErrorBoundary>
+          <PricingSection />
+        </ErrorBoundary>
+      </div>
       
       {/* Footer */}
       <ErrorBoundary>

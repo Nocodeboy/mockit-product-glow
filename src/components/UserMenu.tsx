@@ -32,6 +32,19 @@ export const UserMenu = () => {
     navigate('/dashboard');
   };
 
+  const handleBilling = () => {
+    navigate('/dashboard');
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate('/auth');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -83,7 +96,7 @@ export const UserMenu = () => {
           </DropdownMenuItem>
           
           <DropdownMenuItem 
-            onClick={handleDashboard}
+            onClick={handleBilling}
             className="cursor-pointer rounded-md px-3 py-2.5 hover:bg-green-50 transition-colors duration-150"
           >
             <CreditCard className="mr-3 h-4 w-4 text-green-600" />
@@ -95,7 +108,7 @@ export const UserMenu = () => {
         
         <div className="p-1">
           <DropdownMenuItem 
-            onClick={signOut}
+            onClick={handleSignOut}
             className="cursor-pointer rounded-md px-3 py-2.5 hover:bg-red-50 transition-colors duration-150 text-red-600"
           >
             <LogOut className="mr-3 h-4 w-4" />
