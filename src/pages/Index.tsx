@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { ImageUpload } from '@/components/ImageUpload';
 import { MockupGallery } from '@/components/MockupGallery';
@@ -18,6 +19,7 @@ const Index = () => {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [generatedMockups, setGeneratedMockups] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [userCredits, setUserCredits] = useState(5); // Changed from const to state
   const { toast } = useToast();
   const { user } = useAuth();
   const {
@@ -29,9 +31,6 @@ const Index = () => {
     skipTutorial,
     completeTutorial
   } = useOnboarding();
-
-  // Mock credits for demonstration - in real app this would come from user data
-  const userCredits = 5;
 
   const handleImageUpload = (imageUrl: string) => {
     setUploadedImage(imageUrl);
@@ -57,6 +56,15 @@ const Index = () => {
       toast({
         title: "Error",
         description: "Debes estar autenticado para generar mockups",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (userCredits <= 0) {
+      toast({
+        title: "Sin créditos",
+        description: "No tienes créditos suficientes para generar mockups",
         variant: "destructive",
       });
       return;
@@ -103,6 +111,8 @@ const Index = () => {
         }
 
         setGeneratedMockups(validMockups);
+        // Decrease user credits after successful generation
+        setUserCredits(prev => Math.max(0, prev - 1));
 
         // Guardar la generación en la base de datos con URLs permanentes
         try {
