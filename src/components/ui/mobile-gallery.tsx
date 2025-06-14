@@ -90,12 +90,16 @@ export const MobileGallery: React.FC<MobileGalleryProps> = ({
         {images.map((image, index) => (
           <Card key={index} className="group overflow-hidden">
             <CardContent className="p-0 relative aspect-square">
-              <OptimizedImage
-                src={image}
-                alt={`Imagen ${index + 1}`}
-                className="w-full h-full object-cover cursor-pointer transition-transform group-hover:scale-105"
+              <div 
+                className="w-full h-full cursor-pointer"
                 onClick={() => setSelectedIndex(index)}
-              />
+              >
+                <OptimizedImage
+                  src={image}
+                  alt={`Imagen ${index + 1}`}
+                  className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                />
+              </div>
               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                 <Button
                   size="sm"
