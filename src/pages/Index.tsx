@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ImageUpload } from '@/components/ImageUpload';
 import { SuspenseMockupGallery } from '@/components/LazyComponents';
@@ -13,6 +12,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useToast } from '@/hooks/use-toast';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { useCredits } from '@/hooks/useCredits';
+import { useRateLimit } from '@/hooks/useRateLimit';
 import { Sparkles, Camera, Zap, RotateCcw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -24,6 +24,14 @@ const Index = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { credits, loading: creditsLoading, consumeCredit } = useCredits();
+
+  // Rate limiting for mockup generation
+  const generationRateLimit = useRateLimit({
+    maxAttempts: 3,
+    windowMs: 300000, // 5 minutes
+    blockDurationMs: 600000 // 10 minutes block
+  });
+
   const {
     isFirstVisit,
     currentStep,
@@ -62,6 +70,11 @@ const Index = () => {
       });
       return;
     }
+
+    // Check rate limit
+    if (!generationRateLimit.isAllowed()) {
+      return;
+    }
     
     // Use real credits from database
     if (credits <= 0) {
@@ -77,6 +90,9 @@ const Index = () => {
     setGeneratedMockups([]);
     
     try {
+      // Record rate limit attempt
+      generationRateLimit.recordAttempt();
+
       // Consume credit first
       const creditConsumed = await consumeCredit();
       if (!creditConsumed) {
@@ -263,7 +279,7 @@ const Index = () => {
                     </p>
                     <button
                       onClick={handleGenerateMockups}
-                      disabled={isGenerating || credits === 0 || creditsLoading}
+                      disabled={isGenerating || credits === 0 || creditsLoading || generationRateLimit.isBlocked}
                       className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 disabled:transform-none"
                     >
                       {isGenerating ? (
@@ -273,10 +289,17 @@ const Index = () => {
                         </span>
                       ) : credits === 0 ? (
                         "Sin créditos disponibles"
+                      ) : generationRateLimit.isBlocked ? (
+                        "Demasiadas solicitudes, espera"
                       ) : (
                         "Generar y Guardar Mockups"
                       )}
                     </button>
+                    {generationRateLimit.isBlocked && (
+                      <p className="text-yellow-400 text-sm mt-2">
+                        ⚠️ Has alcanzado el límite de generaciones. Espera unos minutos antes de intentar nuevamente.
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

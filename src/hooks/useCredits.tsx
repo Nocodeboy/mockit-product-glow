@@ -3,24 +3,23 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 export const useCredits = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [credits, setCredits] = useState<number>(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  const fetchCredits = async () => {
-    if (!user) {
-      setCredits(0);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
+  // Use React Query for better caching and error handling
+  const {
+    data: credits = 0,
+    isLoading: loading,
+    error,
+    refetch: fetchCredits
+  } = useQuery({
+    queryKey: ['credits', user?.id],
+    queryFn: async () => {
+      if (!user) return 0;
 
       const { data, error } = await supabase
         .from('profiles')
@@ -30,18 +29,22 @@ export const useCredits = () => {
 
       if (error) {
         console.error('Error fetching credits:', error);
-        setError('Error al cargar créditos');
-        return;
+        throw new Error('Error al cargar créditos');
       }
 
-      setCredits(data?.credits || 0);
-    } catch (err) {
-      console.error('Credits fetch error:', err);
-      setError('Error inesperado al cargar créditos');
-    } finally {
-      setLoading(false);
+      return data?.credits || 0;
+    },
+    enabled: !!user,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 10,   // 10 minutes
+    retry: (failureCount, error) => {
+      // Don't retry on permission errors
+      if (error?.message?.includes('permission') || error?.message?.includes('auth')) {
+        return false;
+      }
+      return failureCount < 2;
     }
-  };
+  });
 
   const consumeCredit = async (): Promise<boolean> => {
     if (!user || credits <= 0) {
@@ -69,7 +72,12 @@ export const useCredits = () => {
         return false;
       }
 
-      setCredits(prev => Math.max(0, prev - 1));
+      // Update the cache immediately for better UX
+      queryClient.setQueryData(['credits', user.id], Math.max(0, credits - 1));
+      
+      // Refresh data from server to ensure consistency
+      setTimeout(() => fetchCredits(), 1000);
+
       return true;
     } catch (err) {
       console.error('Credit consumption error:', err);
@@ -96,7 +104,12 @@ export const useCredits = () => {
         return false;
       }
 
-      setCredits(prev => prev + amount);
+      // Update cache immediately
+      queryClient.setQueryData(['credits', user.id], credits + amount);
+      
+      // Refresh from server
+      setTimeout(() => fetchCredits(), 1000);
+
       return true;
     } catch (err) {
       console.error('Add credits error:', err);
@@ -104,14 +117,10 @@ export const useCredits = () => {
     }
   };
 
-  useEffect(() => {
-    fetchCredits();
-  }, [user]);
-
   return {
     credits,
     loading,
-    error,
+    error: error?.message || null,
     fetchCredits,
     consumeCredit,
     addCredits
