@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
-import { ImageIcon, Heart, Star } from 'lucide-react';
+import { ImageIcon, Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { OptimizedGallery } from './OptimizedGallery';
 
