@@ -1,4 +1,3 @@
-
 import { lazy, Suspense } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -6,8 +5,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 // Lazy loaded components
 export const LazyDashboard = lazy(() => import('@/pages/Dashboard'));
 export const LazyAuth = lazy(() => import('@/pages/Auth'));
-export const LazyUserGenerations = lazy(() => import('@/components/dashboard/UserGenerations'));
-export const LazyMockupGallery = lazy(() => import('@/components/MockupGallery'));
+export const LazyUserGenerations = lazy(() => 
+  import('@/components/dashboard/UserGenerations').then(module => ({ 
+    default: module.UserGenerations 
+  }))
+);
+export const LazyMockupGallery = lazy(() => 
+  import('@/components/MockupGallery').then(module => ({ 
+    default: module.MockupGallery 
+  }))
+);
 
 // Loading fallbacks
 export const DashboardSkeleton = () => (
