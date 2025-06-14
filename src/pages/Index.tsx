@@ -19,7 +19,7 @@ const Index = () => {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [generatedMockups, setGeneratedMockups] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [userCredits, setUserCredits] = useState(5); // Changed from const to state
+  const [userCredits, setUserCredits] = useState(5);
   const { toast } = useToast();
   const { user } = useAuth();
   const {
@@ -111,7 +111,6 @@ const Index = () => {
         }
 
         setGeneratedMockups(validMockups);
-        // Decrease user credits after successful generation
         setUserCredits(prev => Math.max(0, prev - 1));
 
         // Guardar la generación en la base de datos con URLs permanentes
@@ -127,18 +126,26 @@ const Index = () => {
 
           if (insertError) {
             console.error('Error saving to database:', insertError);
-            // No mostramos error al usuario para no interrumpir el flujo
+            toast({
+              title: "Advertencia",
+              description: "Los mockups se generaron pero no se pudieron guardar en tu perfil",
+              variant: "destructive",
+            });
           } else {
             console.log('Generation saved to database with permanent URLs');
           }
         } catch (dbError) {
           console.error('Database error:', dbError);
-          // No mostramos error al usuario para no interrumpir el flujo
+          toast({
+            title: "Advertencia",
+            description: "Los mockups se generaron pero no se pudieron guardar en tu perfil",
+            variant: "destructive",
+          });
         }
 
         toast({
           title: "¡Mockups generados exitosamente!",
-          description: `${validMockups.length} variaciones profesionales guardadas permanentemente`,
+          description: `${validMockups.length} variaciones profesionales creadas`,
         });
       } else {
         console.error('Invalid response structure:', data);

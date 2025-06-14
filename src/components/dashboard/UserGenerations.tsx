@@ -28,6 +28,7 @@ export const UserGenerations = () => {
       if (!user) return;
 
       try {
+        console.log('Fetching mockups for user:', user.id);
         const { data, error } = await supabase
           .from('user_mockups')
           .select('*')
@@ -36,19 +37,30 @@ export const UserGenerations = () => {
 
         if (error) {
           console.error('Error fetching mockups:', error);
+          toast({
+            title: "Error",
+            description: "No se pudieron cargar las generaciones",
+            variant: "destructive",
+          });
           return;
         }
 
+        console.log('Fetched mockups:', data);
         setMockups(data || []);
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Unexpected error:', error);
+        toast({
+          title: "Error",
+          description: "Error inesperado al cargar las generaciones",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
     };
 
     fetchUserMockups();
-  }, [user]);
+  }, [user, toast]);
 
   const handleToggleFavorite = async (mockupId: string, currentFavorite: boolean) => {
     try {
@@ -59,6 +71,11 @@ export const UserGenerations = () => {
 
       if (error) {
         console.error('Error updating favorite:', error);
+        toast({
+          title: "Error",
+          description: "No se pudo actualizar el favorito",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -76,6 +93,11 @@ export const UserGenerations = () => {
       });
     } catch (error) {
       console.error('Error:', error);
+      toast({
+        title: "Error",
+        description: "Error inesperado al actualizar favorito",
+        variant: "destructive",
+      });
     }
   };
 
@@ -88,6 +110,11 @@ export const UserGenerations = () => {
 
       if (error) {
         console.error('Error deleting mockup:', error);
+        toast({
+          title: "Error",
+          description: "No se pudo eliminar la generación",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -99,12 +126,23 @@ export const UserGenerations = () => {
       });
     } catch (error) {
       console.error('Error:', error);
+      toast({
+        title: "Error",
+        description: "Error inesperado al eliminar la generación",
+        variant: "destructive",
+      });
     }
   };
 
   const handleDownload = async (url: string, index: number) => {
     try {
+      console.log('Downloading image:', url);
       const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
+      }
+      
       const blob = await response.blob();
       const downloadUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
