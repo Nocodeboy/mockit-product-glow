@@ -4,12 +4,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { SuspenseUserGenerations } from '@/components/LazyComponents';
 import { AccountSettings } from '@/components/dashboard/AccountSettings';
 import { CreditBalance } from '@/components/dashboard/CreditBalance';
+import { MonitoringDashboard } from '@/components/dashboard/MonitoringDashboard';
 import { UserMenu } from '@/components/UserMenu';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { Sparkles, Image, Settings, ArrowLeft } from 'lucide-react';
+import { Sparkles, Image, Settings, ArrowLeft, Activity } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
@@ -88,13 +89,20 @@ const Dashboard = () => {
 
         {/* Main Dashboard Content */}
         <Tabs defaultValue="generations" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-8 bg-slate-800/90 backdrop-blur-sm border-slate-700/50">
+          <TabsList className="grid w-full grid-cols-4 mb-8 bg-slate-800/90 backdrop-blur-sm border-slate-700/50">
             <TabsTrigger 
               value="generations" 
               className="flex items-center gap-2 data-[state=active]:bg-slate-700/50 data-[state=active]:text-white text-gray-300"
             >
               <Image className="h-4 w-4" />
               Mis Generaciones
+            </TabsTrigger>
+            <TabsTrigger 
+              value="monitoring" 
+              className="flex items-center gap-2 data-[state=active]:bg-slate-700/50 data-[state=active]:text-white text-gray-300"
+            >
+              <Activity className="h-4 w-4" />
+              Monitoring
             </TabsTrigger>
             <TabsTrigger 
               value="account" 
@@ -108,6 +116,12 @@ const Dashboard = () => {
           <TabsContent value="generations">
             <ErrorBoundary>
               <SuspenseUserGenerations />
+            </ErrorBoundary>
+          </TabsContent>
+          
+          <TabsContent value="monitoring">
+            <ErrorBoundary>
+              <MonitoringDashboard />
             </ErrorBoundary>
           </TabsContent>
           
